@@ -39,12 +39,11 @@
     display: flex;
     flex-direction: column;
     
-    /* Previne seleção acidental de texto, o que faz o cursor sumir */
+    /* Previne seleção acidental de texto */
     -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Permite selecionar texto apenas nos inputs */
   input {
     -webkit-user-select: auto;
     user-select: auto;
@@ -125,8 +124,6 @@
   
   .canvas-container.mode-pan { cursor: grab; }
   .canvas-container.mode-pan:active { cursor: grabbing; }
-  
-  /* URL Encoded SVG cursor para prevenir falhas no Chrome/Edge */
   .canvas-container.mode-draw {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'/%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'/%3E%3Cpath d='M2 2l7.586 7.586'/%3E%3Ccircle cx='11' cy='11' r='2'/%3E%3C/svg%3E") 0 16, crosshair;
   }
@@ -166,7 +163,7 @@
   .interaction-tools {
     display: flex;
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     background: var(--blueprint-deep);
     padding: 6px;
     border-radius: var(--radius);
@@ -361,6 +358,11 @@
         <button id="mode-pan">✋ Mover</button>
         <button id="mode-draw">✎ Desenhar</button>
       </div>
+      <!-- Alternância de Entrada (Sincronizado) -->
+      <div class="interaction-tools" style="margin-bottom: 24px;">
+        <button class="input-toggle active" data-val="mouse">🖱 Mouse</button>
+        <button class="input-toggle" data-val="pen">🖊 Mesa Digitalizadora</button>
+      </div>
     </div>
 
     <div class="block" id="equation-input-section">
@@ -417,6 +419,14 @@
 
   <div class="draw-toolbar">
     <div class="tool-row">
+      <span class="row-label">Entrada</span>
+      <button class="tool-btn active input-toggle" data-val="mouse">🖱 Mouse</button>
+      <button class="tool-btn input-toggle" data-val="pen">🖊 Mesa (Pressão)</button>
+    </div>
+    
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+    
+    <div class="tool-row">
       <span class="row-label">Cor</span>
       <button class="swatch active" style="background:#1A202C" data-color="#1A202C"></button>
       <button class="swatch" style="background:#E53E3E" data-color="#E53E3E"></button>
@@ -427,7 +437,7 @@
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
-      <span class="row-label">Espessura</span>
+      <span class="row-label">Espessura Base</span>
       <input type="range" id="brush-size" min="1" max="30" value="4">
       <span class="brush-size-label" id="brush-size-label">4px</span>
     </div>
@@ -448,6 +458,22 @@
   </div>
 </aside>
 
+<!-- GESTÃO GLOBAL DA ENTRADA (MOUSE VS MESA) -->
+<script>
+  window.usePenPressure = false;
+  const inputToggles = document.querySelectorAll('.input-toggle');
+  inputToggles.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const val = e.target.dataset.val;
+      window.usePenPressure = (val === 'pen');
+      inputToggles.forEach(b => {
+        if (b.dataset.val === val) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+    });
+  });
+</script>
+
 <!-- SCRIPT DO PLANO CARTESIANO INFINITO -->
 <script>
 (function(){
@@ -461,7 +487,6 @@
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let cssWidth = 0, cssHeight = 0;
 
-  // Estado da câmera (Pan e Zoom infinito)
   let unitSize = 40; 
   let originX = 0; 
   let originY = 0; 
@@ -572,7 +597,6 @@
     return { m, b };
   }
 
-  // BOTÃO: GERAR RETA E AUTO-ZOOM
   applyEqBtn.addEventListener('click', () => {
     const val = eqInput.value;
     if(!val.trim()) return;
@@ -584,11 +608,8 @@
     
     const { m, b } = parsed;
     points.length = 0;
-    
-    // Y-intercept
     points.push({ x: 0, y: b });
     
-    // Raiz ou ponto alternativo
     if (Math.abs(m) > 1e-9) {
         if (Math.abs(b) < 1e-9) {
             points.push({ x: 1, y: m });
@@ -601,7 +622,6 @@
     
     updateInputsFromPoints();
     
-    // CÁLCULO DE AUTO-ZOOM (FOCAR NA RETA E NOS PONTOS)
     const marginX = Math.abs(points[1].x - points[0].x) * 0.3 + 2;
     const marginY = Math.abs(points[1].y - points[0].y) * 0.3 + 2;
     
@@ -619,22 +639,18 @@
     const scaleX = cssWidth / rangeX;
     const scaleY = cssHeight / rangeY;
 
-    // Define o novo nível de zoom
     unitSize = Math.min(scaleX, scaleY);
     unitSize = Math.max(0.001, unitSize); 
     
     const cx = (pMinX + pMaxX) / 2;
     const cy = (pMinY + pMaxY) / 2;
 
-    // Atualiza o Pan (câmera) para o centro dos dois pontos
     originX = (cssWidth / 2) - cx * unitSize;
     originY = (cssHeight / 2) + cy * unitSize;
     mathCenterX = cx;
     mathCenterY = cy;
     
-    // Limpa o canvas de rascunho para não causar assimetria visual ao saltar a câmera
     drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
-    
     refresh();
   });
 
@@ -642,7 +658,6 @@
     if (e.key === 'Enter') applyEqBtn.click();
   });
 
-  // Função dinâmica para calcular a densidade do grid na tela
   function getGridStep(uSize) {
       const targetPixels = 50; 
       const targetStep = targetPixels / uSize;
@@ -658,13 +673,11 @@
 
     const step = getGridStep(unitSize);
 
-    // Calculando limites reais em passos matemáticos dinâmicos para não travar o loop no zoom infinito
     const minX = Math.floor((-originX / unitSize) / step) * step;
     const maxX = Math.ceil(((cssWidth - originX) / unitSize) / step) * step;
     const minY = Math.floor(((originY - cssHeight) / unitSize) / step) * step;
     const maxY = Math.ceil((originY / unitSize) / step) * step;
 
-    // Grid Lines Infinito
     ctx.lineWidth = 1;
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
@@ -681,7 +694,6 @@
       ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(cssWidth, sy); ctx.stroke();
     }
 
-    // Axes
     ctx.strokeStyle = '#2C3E50'; ctx.lineWidth = 1.6;
     if(originY >= 0 && originY <= cssHeight){
       ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(cssWidth, originY); ctx.stroke();
@@ -690,14 +702,12 @@
       ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, cssHeight); ctx.stroke();
     }
 
-    // Labels
     ctx.fillStyle = '#718096';
     ctx.font = `11px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
       if(Math.abs(xVal) < 1e-9) continue;
-      // Rotula intercalado para evitar sobreposição
       if(Math.abs(xVal % (step * 2)) > 1e-9) continue;
       
       const sx = originX + xVal * unitSize;
@@ -716,12 +726,10 @@
       ctx.fillText(yVal, sx, sy);
     }
     
-    // Origin 0
     ctx.textAlign = 'left'; ctx.fillStyle = '#2C3E50';
     ctx.font = `600 ${Math.max(11, Math.min(16, unitSize*0.32))}px 'Space Grotesk', sans-serif`;
     ctx.fillText('0', originX + 6, originY + 6);
 
-    // Reta da Função Afim
     if(points.length === 2){
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
@@ -811,21 +819,29 @@
   let lastMouseX = 0, lastMouseY = 0;
   let hasMoved = false;
 
-  container.addEventListener('mousedown', (e) => {
-    e.preventDefault(); 
+  // Uso da Pointer Events API (substitui mousedown)
+  container.addEventListener('pointerdown', (e) => {
     isDragging = true; hasMoved = false;
     const rect = container.getBoundingClientRect();
     lastMouseX = e.clientX - rect.left;
     lastMouseY = e.clientY - rect.top;
 
     if(currentMode === 'draw'){
+      let pressure = 0.5;
+      if (window.usePenPressure && e.pointerType === 'pen') {
+          pressure = e.pressure !== undefined ? e.pressure : 0.5;
+      }
+      let currentWidth = 4 * (pressure * 2);
+
       drawCtx.beginPath();
-      drawCtx.arc(lastMouseX, lastMouseY, 1.5, 0, Math.PI * 2);
-      drawCtx.fillStyle = '#1A202C'; drawCtx.fill();
+      drawCtx.arc(lastMouseX, lastMouseY, currentWidth / 2, 0, Math.PI * 2);
+      drawCtx.fillStyle = '#1A202C'; 
+      drawCtx.fill();
     }
   });
 
-  window.addEventListener('mousemove', (e) => {
+  // Substitui mousemove
+  window.addEventListener('pointermove', (e) => {
     if(!isDragging) return;
     hasMoved = true;
     const rect = container.getBoundingClientRect();
@@ -848,14 +864,34 @@
       
       refresh();
     } else if(currentMode === 'draw'){
-      drawCtx.strokeStyle = '#1A202C'; drawCtx.lineWidth = 3;
-      drawCtx.beginPath(); drawCtx.moveTo(lastMouseX, lastMouseY); drawCtx.lineTo(mx, my); drawCtx.stroke();
+      let pressure = 0.5;
+      if (window.usePenPressure && e.pointerType === 'pen') {
+          pressure = e.pressure !== undefined ? e.pressure : 0.5;
+      }
+      let currentWidth = 4 * (pressure * 2);
+
+      drawCtx.strokeStyle = '#1A202C'; 
+      drawCtx.fillStyle = '#1A202C';
+      drawCtx.lineWidth = currentWidth;
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+
+      drawCtx.beginPath(); 
+      drawCtx.moveTo(lastMouseX, lastMouseY); 
+      drawCtx.lineTo(mx, my); 
+      drawCtx.stroke();
+      
+      // Suaviza as quebras devido à mudança de espessura
+      drawCtx.beginPath(); 
+      drawCtx.arc(mx, my, currentWidth / 2, 0, Math.PI * 2); 
+      drawCtx.fill();
     }
     
     lastMouseX = mx; lastMouseY = my;
   });
 
-  window.addEventListener('mouseup', (e) => {
+  // Substitui mouseup
+  window.addEventListener('pointerup', (e) => {
     if(isDragging && currentMode === 'point' && !hasMoved){
       const rect = container.getBoundingClientRect();
       const sx = e.clientX - rect.left; const sy = e.clientY - rect.top;
@@ -881,7 +917,6 @@
     const planePos = toPlane(mx, my);
     
     unitSize *= zoomFactor;
-    // Removido o limite superior de zoom, deixando totalmente infinito
     unitSize = Math.max(0.001, unitSize); 
     
     originX = mx - planePos.x * unitSize;
@@ -931,7 +966,7 @@
 })();
 </script>
 
-<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN -->
+<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN (COM SUPORTE À MESA) -->
 <script>
 (function(){
   const openBtn = document.getElementById('open-draw-btn');
@@ -972,35 +1007,64 @@
   window.addEventListener('resize', () => { if(isOpen) resizeCanvas(); });
 
   function pushHistory(){ history.push(canvas.toDataURL()); if(history.length>25) history.shift(); }
-  function getPos(e){ const rect = canvas.getBoundingClientRect(); const p = e.touches?e.touches[0]:e; return { x: p.clientX-rect.left, y: p.clientY-rect.top }; }
+  
+  function getPos(e){ 
+    const rect = canvas.getBoundingClientRect(); 
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
+  }
   
   function startDraw(e){ 
-    e.preventDefault(); 
+    if (e.pointerType !== 'mouse') e.preventDefault();
     pushHistory(); drawing=true; 
     const p=getPos(e); lastX=p.x; lastY=p.y; 
     
+    let pressure = 0.5;
+    if (window.usePenPressure && e.pointerType === 'pen') {
+        pressure = e.pressure !== undefined ? e.pressure : 0.5;
+    }
+    
+    let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
+    let pWidth = baseSize * (pressure * 2);
+
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
     
     ctx.beginPath(); 
-    ctx.arc(p.x, p.y, (tool==='eraser'?currentSize*1.6:currentSize)/2, 0, Math.PI*2); 
+    ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); 
     ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor; 
     ctx.fill(); 
   }
   
   function moveDraw(e){ 
-    if(!drawing) return; e.preventDefault(); 
+    if(!drawing) return; 
+    if (e.pointerType !== 'mouse') e.preventDefault(); 
     const p=getPos(e); 
+    
+    let pressure = 0.5;
+    if (window.usePenPressure && e.pointerType === 'pen') {
+        pressure = e.pressure !== undefined ? e.pressure : 0.5;
+    }
+
+    let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
+    let pWidth = baseSize * (pressure * 2);
     
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
     ctx.strokeStyle = tool === 'eraser' ? '#000' : currentColor; 
-    ctx.lineWidth = tool === 'eraser' ? currentSize*1.6 : currentSize; 
+    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor;
+    ctx.lineWidth = pWidth; 
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     
     ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
+    ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fill();
+
     lastX=p.x; lastY=p.y; 
   }
   
-  canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', moveDraw); window.addEventListener('mouseup', ()=>drawing=false);
-  canvas.addEventListener('touchstart', startDraw, {passive:false}); canvas.addEventListener('touchmove', moveDraw, {passive:false}); canvas.addEventListener('touchend', ()=>drawing=false);
+  // Utilizando Pointer Events na lousa de rascunho
+  canvas.addEventListener('pointerdown', startDraw); 
+  canvas.addEventListener('pointermove', moveDraw); 
+  window.addEventListener('pointerup', ()=>drawing=false);
+  window.addEventListener('pointercancel', ()=>drawing=false);
 
   document.querySelectorAll('.swatch').forEach(sw => {
     sw.addEventListener('click', () => { 
