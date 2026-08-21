@@ -24,7 +24,6 @@
     --p2: #E53E3E;
     --danger: #E53E3E;
     --radius: 4px;
-    --drawer-width: 420px;
     font-size: 16px;
   }
 
@@ -42,10 +41,21 @@
   }
 
   header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 20px 32px;
     border-bottom: 1px solid var(--paper-line);
     background: var(--blueprint-deep);
     flex-shrink: 0;
+    gap: 20px;
+  }
+  
+  @media (max-width: 700px){
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   header .eyebrow{
@@ -219,6 +229,13 @@
   button:hover{ background: #2A3B4C; }
   button:active{ transform: translateY(1px); }
 
+  #open-draw-btn {
+    white-space: nowrap;
+    height: fit-content;
+    font-size: 0.9rem;
+    padding: 12px 24px;
+  }
+
   button.secondary{
     background: transparent;
     color: var(--ink);
@@ -263,83 +280,35 @@
   .vertical-warning { color: var(--danger); border-left-color: var(--danger); }
   .hint{ font-size: 0.76rem; color: var(--ink-soft); margin-top: 10px; opacity: 0.85; }
 
-  /* ---------- DRAW DRAWER ---------- */
-  .draw-backdrop{
-    position: fixed; inset: 0;
-    background: rgba(10, 20, 30, 0.2);
-    z-index: 30;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-  .draw-backdrop.open{ opacity: 1; pointer-events: auto; }
-
+  /* ---------- FULLSCREEN DRAW DRAWER ---------- */
   .draw-drawer{
     position: fixed;
-    top: 0; right: 0;
+    inset: 0; /* Cobre 100% da tela (top:0, left:0, bottom:0, right:0) */
+    width: 100vw;
     height: 100vh;
-    width: min(var(--drawer-width), 92vw);
     background: var(--paper);
     color: var(--ink);
-    z-index: 35;
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animação mais suave */
+    z-index: 100; /* Fica acima de tudo */
+    transform: translateY(100%); /* Começa fora da tela por baixo */
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    box-shadow: -6px 0 24px rgba(0,0,0,0.15);
   }
-  .draw-drawer.open{ transform: translateX(0); }
+  .draw-drawer.open{ transform: translateY(0); } /* Desliza pra cima */
 
-  /* BOTÃO ACOPLADO AO PAINEL (RESOLVE O FLICKER) */
-  .draw-tab{
-    position: absolute;
-    top: 50%;
-    left: -44px; /* Grudado para fora à esquerda */
-    transform: translateY(-50%);
-    width: 44px;
-    padding: 16px 0;
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    border-radius: var(--radius) 0 0 var(--radius);
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 0.82rem;
-    letter-spacing: 0.03em;
-    cursor: pointer;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: -3px 0px 8px rgba(0,0,0,0.15);
-    transition: background 0.15s ease;
-  }
-  .draw-tab:hover{ background: var(--ink-soft); }
-
-  .drawer-resize-handle {
-    position: absolute;
-    top: 0; left: -4px;
-    width: 8px; height: 100%;
-    cursor: ew-resize;
-    z-index: 10;
-    background: transparent;
-  }
-  .drawer-resize-handle:hover,
-  .drawer-resize-handle.active { background: var(--pencil); }
-
-  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
-  .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 0.95rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
-  .draw-toolbar{ padding: 14px 20px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
+  .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
+  .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;}
+  
   .tool-row{ display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
-  .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: 62px; flex-shrink: 0; }
+  .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: auto; flex-shrink: 0; }
 
-  .swatch{ width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
+  .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
   .swatch.active{ border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
-  #custom-color{ width: 28px; height: 28px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
+  #custom-color{ width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
   #brush-size{ flex: 1; accent-color: var(--pencil-dark); min-width: 100px; }
   .brush-size-label{ font-size: 0.75rem; color: var(--ink-soft); width: 34px; text-align: right; flex-shrink: 0; }
-  .tool-btn{ padding: 7px 12px; font-size: 0.72rem; background: transparent; color: var(--ink); border-color: var(--paper-line); }
+  .tool-btn{ padding: 7px 12px; font-size: 0.75rem; background: transparent; color: var(--ink); border-color: var(--paper-line); }
   .tool-btn.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
   .draw-canvas-wrap{
@@ -350,15 +319,18 @@
       #ffffff;
   }
   #draw-canvas{ display:block; width: 100%; height: 100%; cursor: crosshair; }
-  .draw-footer{ padding: 12px 20px 18px; display:flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--paper-line); flex-shrink: 0; }
+  .draw-footer{ padding: 14px 32px; display:flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--paper-line); flex-shrink: 0; }
 </style>
 </head>
 <body>
 
 <header>
-  <p class="eyebrow">Ferramenta de estudo</p>
-  <h1>Plano Cartesiano — Função Afim</h1>
-  <p>Marque pontos, arraste para explorar o plano infinito ou use o scroll para dar zoom.</p>
+  <div>
+    <p class="eyebrow">Ferramenta de estudo</p>
+    <h1>Plano Cartesiano — Função Afim</h1>
+    <p>Marque pontos, arraste para explorar o plano infinito ou use o scroll para dar zoom.</p>
+  </div>
+  <button id="open-draw-btn">✎ Rascunho Livre</button>
 </header>
 
 <main>
@@ -416,12 +388,7 @@
   </div>
 </main>
 
-<div id="draw-backdrop" class="draw-backdrop"></div>
 <aside id="draw-drawer" class="draw-drawer" aria-hidden="true">
-  <!-- BOTÃO EMBUTIDO PARA NÃO PISCAR -->
-  <button id="draw-tab" class="draw-tab" aria-expanded="false" aria-controls="draw-drawer">✎ Rascunho Livre</button>
-  <div class="drawer-resize-handle" id="drawer-resize"></div>
-  
   <div class="draw-header">
     <h2>Quadro de Rascunho</h2>
     <button id="draw-close" class="secondary">Fechar ✕</button>
@@ -437,11 +404,17 @@
       <button class="swatch" style="background:#38A169" data-color="#38A169"></button>
       <input type="color" id="custom-color" value="#1A202C">
     </div>
+    
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+    
     <div class="tool-row">
       <span class="row-label">Espessura</span>
       <input type="range" id="brush-size" min="1" max="30" value="4">
       <span class="brush-size-label" id="brush-size-label">4px</span>
     </div>
+
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+
     <div class="tool-row">
       <span class="row-label">Ferramenta</span>
       <button id="tool-pen" class="tool-btn active">✎ Caneta</button>
@@ -701,11 +674,9 @@
     if(currentMode === 'pan'){
       originX += dx;
       originY += dy;
-      // Atualiza o centro matemático real
       mathCenterX = ((cssWidth / 2) - originX) / unitSize;
       mathCenterY = (originY - (cssHeight / 2)) / unitSize;
       
-      // Pan no layer de desenho livre
       const temp = document.createElement('canvas');
       temp.width = drawLayer.width; temp.height = drawLayer.height;
       temp.getContext('2d').drawImage(drawLayer, 0, 0);
@@ -725,7 +696,6 @@
     if(isDragging && currentMode === 'point' && !hasMoved){
       const rect = container.getBoundingClientRect();
       const sx = e.clientX - rect.left; const sy = e.clientY - rect.top;
-      // Verificar se o click foi fora do container
       if (sx >= 0 && sx <= cssWidth && sy >= 0 && sy <= cssHeight) {
           const plane = toPlane(sx, sy);
           const x = snap(plane.x); const y = snap(plane.y);
@@ -753,15 +723,13 @@
     const planePos = toPlane(mx, my);
     
     unitSize *= zoomFactor;
-    unitSize = Math.max(15, Math.min(250, unitSize)); // Limites de zoom
+    unitSize = Math.max(15, Math.min(250, unitSize)); 
     
-    // Ajusta origem para zoom no mouse
     originX = mx - planePos.x * unitSize;
     originY = my + planePos.y * unitSize;
     mathCenterX = ((cssWidth / 2) - originX) / unitSize;
     mathCenterY = (originY - (cssHeight / 2)) / unitSize;
 
-    // Escalar desenho livre
     const temp = document.createElement('canvas');
     temp.width = drawLayer.width; temp.height = drawLayer.height;
     temp.getContext('2d').drawImage(drawLayer, 0, 0);
@@ -805,41 +773,31 @@
 })();
 </script>
 
-<!-- SCRIPT DO PAINEL DE RASCUNHO LATERAL -->
+<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN -->
 <script>
 (function(){
-  const tab = document.getElementById('draw-tab');
+  const openBtn = document.getElementById('open-draw-btn');
   const drawer = document.getElementById('draw-drawer');
-  const backdrop = document.getElementById('draw-backdrop');
   const closeBtn = document.getElementById('draw-close');
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
   const wrap = canvas.parentElement;
 
-  const resizeHandle = document.getElementById('drawer-resize');
-  let isResizing = false;
-
-  resizeHandle.addEventListener('mousedown', () => { isResizing = true; resizeHandle.classList.add('active'); document.body.style.cursor = 'ew-resize'; });
-  window.addEventListener('mousemove', (e) => {
-    if (!isResizing) return;
-    let newWidth = window.innerWidth - e.clientX;
-    newWidth = Math.max(250, Math.min(newWidth, window.innerWidth - 50));
-    document.documentElement.style.setProperty('--drawer-width', `${newWidth}px`);
-    // Removemos a animação temporariamente para não lagar o resize
-    drawer.style.transition = 'none'; 
-  });
-  window.addEventListener('mouseup', () => {
-    if (isResizing) {
-      isResizing = false; resizeHandle.classList.remove('active'); document.body.style.cursor = 'default';
-      drawer.style.transition = ''; resizeCanvas();
-    }
-  });
-
   let isOpen = false;
-  function openDrawer(){ isOpen = true; drawer.classList.add('open'); backdrop.classList.add('open'); tab.innerHTML = '✕ Fechar'; requestAnimationFrame(resizeCanvas); }
-  function closeDrawer(){ isOpen = false; drawer.classList.remove('open'); backdrop.classList.remove('open'); tab.innerHTML = '✎ Rascunho Livre'; }
-  tab.addEventListener('click', () => isOpen ? closeDrawer() : openDrawer());
-  closeBtn.addEventListener('click', closeDrawer); backdrop.addEventListener('click', closeDrawer);
+  
+  function openDrawer(){ 
+    isOpen = true; 
+    drawer.classList.add('open'); 
+    requestAnimationFrame(resizeCanvas); 
+  }
+  
+  function closeDrawer(){ 
+    isOpen = false; 
+    drawer.classList.remove('open'); 
+  }
+  
+  openBtn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
 
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let history = []; let tool='pen'; let currentColor='#1A202C'; let currentSize=4; let drawing=false; let lastX=0, lastY=0;
@@ -853,18 +811,39 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap='round'; ctx.lineJoin='round';
     if(prev.width>0) ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, rect.width, rect.height);
   }
-  window.addEventListener('resize', () => { if(isOpen && !isResizing) resizeCanvas(); });
+  window.addEventListener('resize', () => { if(isOpen) resizeCanvas(); });
 
   function pushHistory(){ history.push(canvas.toDataURL()); if(history.length>25) history.shift(); }
   function getPos(e){ const rect = canvas.getBoundingClientRect(); const p = e.touches?e.touches[0]:e; return { x: p.clientX-rect.left, y: p.clientY-rect.top }; }
-  function startDraw(e){ e.preventDefault(); pushHistory(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; ctx.beginPath(); ctx.arc(p.x, p.y, (tool==='eraser'?currentSize*1.6:currentSize)/2, 0, Math.PI*2); ctx.fillStyle=tool==='eraser'?'#ffffff':currentColor; ctx.fill(); }
-  function moveDraw(e){ if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.strokeStyle=tool==='eraser'?'#ffffff':currentColor; ctx.lineWidth=tool==='eraser'?currentSize*1.6:currentSize; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX=p.x; lastY=p.y; }
+  
+  function startDraw(e){ 
+    e.preventDefault(); pushHistory(); drawing=true; 
+    const p=getPos(e); lastX=p.x; lastY=p.y; 
+    ctx.beginPath(); ctx.arc(p.x, p.y, (tool==='eraser'?currentSize*1.6:currentSize)/2, 0, Math.PI*2); 
+    ctx.fillStyle=tool==='eraser'?'#ffffff':currentColor; ctx.fill(); 
+  }
+  
+  function moveDraw(e){ 
+    if(!drawing) return; e.preventDefault(); 
+    const p=getPos(e); 
+    ctx.strokeStyle=tool==='eraser'?'#ffffff':currentColor; 
+    ctx.lineWidth=tool==='eraser'?currentSize*1.6:currentSize; 
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
+    lastX=p.x; lastY=p.y; 
+  }
   
   canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', moveDraw); window.addEventListener('mouseup', ()=>drawing=false);
   canvas.addEventListener('touchstart', startDraw, {passive:false}); canvas.addEventListener('touchmove', moveDraw, {passive:false}); canvas.addEventListener('touchend', ()=>drawing=false);
 
   document.querySelectorAll('.swatch').forEach(sw => {
-    sw.addEventListener('click', () => { document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); sw.classList.add('active'); currentColor=sw.dataset.color; document.getElementById('custom-color').value=currentColor; tool='pen'; document.getElementById('tool-pen').classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); });
+    sw.addEventListener('click', () => { 
+      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); 
+      sw.classList.add('active'); 
+      currentColor=sw.dataset.color; 
+      document.getElementById('custom-color').value=currentColor; 
+      tool='pen'; document.getElementById('tool-pen').classList.add('active'); 
+      document.getElementById('tool-eraser').classList.remove('active'); 
+    });
   });
   document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; });
   document.getElementById('brush-size').addEventListener('input', (e) => { currentSize=parseInt(e.target.value); document.getElementById('brush-size-label').textContent=currentSize+'px'; });
