@@ -369,9 +369,9 @@
         <label for="eq-input" style="font-weight:700; font-size:1.1rem; color:var(--ink);">y = </label>
         <input type="text" id="eq-input" placeholder="ex: 2x - 3" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
-      <p class="hint" style="margin-top: 8px;">Escreva a equação no formato <b>mx + b</b> para gerar a reta.</p>
+      <p class="hint" style="margin-top: 8px;">Escreva a equação no formato <b>mx + b</b> para gerar a reta e focar nela automaticamente.</p>
       <div class="btn-row">
-        <button id="apply-eq-btn">Gerar Reta</button>
+        <button id="apply-eq-btn">Gerar Reta e Focar</button>
       </div>
     </div>
 
@@ -461,8 +461,8 @@
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let cssWidth = 0, cssHeight = 0;
 
-  // Estado da câmera (Pan e Zoom)
-  let unitSize = 40; // Pixels por unidade matemática
+  // Estado da câmera (Pan e Zoom infinito)
+  let unitSize = 40; 
   let originX = 0; 
   let originY = 0; 
   let mathCenterX = 0; 
@@ -500,7 +500,6 @@
     drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
     if(prev.width > 0) drawCtx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, cssWidth, cssHeight);
     
-    // Manter o foco da câmera ao redimensionar a janela
     if(originX === 0 && originY === 0) {
         originX = cssWidth / 2;
         originY = cssHeight / 2;
@@ -549,18 +548,15 @@
     y2Input.value = points[1] ? points[1].y : '';
   }
 
-  // Parseador simples para "mx + b"
   function parseAffine(eq) {
     eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '');
     if (eq === '') return null;
     
-    // Se não tem 'x', é uma função constante (y = b)
     if (!eq.includes('x')) {
         let b = parseFloat(eq);
         return isNaN(b) ? null : { m: 0, b: b };
     }
     
-    // Separa a string em torno do 'x'
     let parts = eq.split('x');
     let mStr = parts[0];
     let bStr = parts[1];
@@ -576,6 +572,7 @@
     return { m, b };
   }
 
+  // BOTÃO: GERAR RETA E AUTO-ZOOM
   applyEqBtn.addEventListener('click', () => {
     const val = eqInput.value;
     if(!val.trim()) return;
@@ -588,23 +585,56 @@
     const { m, b } = parsed;
     points.length = 0;
     
-    // Ponto 1: Intersecção com eixo Y (x = 0)
+    // Y-intercept
     points.push({ x: 0, y: b });
     
-    // Ponto 2: Raiz (y = 0) ou x = 1 (se for constante)
+    // Raiz ou ponto alternativo
     if (Math.abs(m) > 1e-9) {
         if (Math.abs(b) < 1e-9) {
-            // Se b = 0, a raiz é 0. Para não sobrepor pontos, usa x=1
             points.push({ x: 1, y: m });
         } else {
-            // Adiciona a raiz como ponto de marcação
-            points.push({ x: snap(-b / m), y: 0 }); // snap para alinhar à grade se possivel
+            points.push({ x: parseFloat((-b / m).toPrecision(10)), y: 0 }); 
         }
     } else {
         points.push({ x: 1, y: b });
     }
     
     updateInputsFromPoints();
+    
+    // CÁLCULO DE AUTO-ZOOM (FOCAR NA RETA E NOS PONTOS)
+    const marginX = Math.abs(points[1].x - points[0].x) * 0.3 + 2;
+    const marginY = Math.abs(points[1].y - points[0].y) * 0.3 + 2;
+    
+    let pMinX = Math.min(points[0].x, points[1].x) - marginX;
+    let pMaxX = Math.max(points[0].x, points[1].x) + marginX;
+    let pMinY = Math.min(points[0].y, points[1].y) - marginY;
+    let pMaxY = Math.max(points[0].y, points[1].y) + marginY;
+
+    let rangeX = pMaxX - pMinX;
+    let rangeY = pMaxY - pMinY;
+
+    if (rangeX < 8) { pMinX -= 4; pMaxX += 4; rangeX = pMaxX - pMinX; }
+    if (rangeY < 8) { pMinY -= 4; pMaxY += 4; rangeY = pMaxY - pMinY; }
+
+    const scaleX = cssWidth / rangeX;
+    const scaleY = cssHeight / rangeY;
+
+    // Define o novo nível de zoom
+    unitSize = Math.min(scaleX, scaleY);
+    unitSize = Math.max(0.001, unitSize); 
+    
+    const cx = (pMinX + pMaxX) / 2;
+    const cy = (pMinY + pMaxY) / 2;
+
+    // Atualiza o Pan (câmera) para o centro dos dois pontos
+    originX = (cssWidth / 2) - cx * unitSize;
+    originY = (cssHeight / 2) + cy * unitSize;
+    mathCenterX = cx;
+    mathCenterY = cy;
+    
+    // Limpa o canvas de rascunho para não causar assimetria visual ao saltar a câmera
+    drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
+    
     refresh();
   });
 
@@ -612,25 +642,43 @@
     if (e.key === 'Enter') applyEqBtn.click();
   });
 
+  // Função dinâmica para calcular a densidade do grid na tela
+  function getGridStep(uSize) {
+      const targetPixels = 50; 
+      const targetStep = targetPixels / uSize;
+      const mag = Math.pow(10, Math.floor(Math.log10(targetStep)));
+      const res = targetStep / mag; 
+      if (res <= 2) return 1 * mag;
+      if (res <= 5) return 2 * mag;
+      return 5 * mag;
+  }
+
   function draw(){
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-    const minX = Math.floor(-originX / unitSize);
-    const maxX = Math.ceil((cssWidth - originX) / unitSize);
-    const minY = Math.floor((originY - cssHeight) / unitSize);
-    const maxY = Math.ceil(originY / unitSize);
+    const step = getGridStep(unitSize);
 
-    // Grid Lines
+    // Calculando limites reais em passos matemáticos dinâmicos para não travar o loop no zoom infinito
+    const minX = Math.floor((-originX / unitSize) / step) * step;
+    const maxX = Math.ceil(((cssWidth - originX) / unitSize) / step) * step;
+    const minY = Math.floor(((originY - cssHeight) / unitSize) / step) * step;
+    const maxY = Math.ceil((originY / unitSize) / step) * step;
+
+    // Grid Lines Infinito
     ctx.lineWidth = 1;
-    for(let i = minX; i <= maxX; i++){
-      ctx.strokeStyle = (i % 5 === 0) ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
-      const xPos = originX + i * unitSize;
-      ctx.beginPath(); ctx.moveTo(xPos, 0); ctx.lineTo(xPos, cssHeight); ctx.stroke();
+    for(let x = minX; x <= maxX; x += step){
+      const xVal = parseFloat(x.toPrecision(10));
+      const isMajor = Math.abs(xVal % (step * 5)) < 1e-9;
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
+      const sx = originX + xVal * unitSize;
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
     }
-    for(let i = minY; i <= maxY; i++){
-      ctx.strokeStyle = (i % 5 === 0) ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
-      const yPos = originY - i * unitSize;
-      ctx.beginPath(); ctx.moveTo(0, yPos); ctx.lineTo(cssWidth, yPos); ctx.stroke();
+    for(let y = minY; y <= maxY; y += step){
+      const yVal = parseFloat(y.toPrecision(10));
+      const isMajor = Math.abs(yVal % (step * 5)) < 1e-9;
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
+      const sy = originY - yVal * unitSize;
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(cssWidth, sy); ctx.stroke();
     }
 
     // Axes
@@ -644,25 +692,33 @@
 
     // Labels
     ctx.fillStyle = '#718096';
-    ctx.font = `${Math.max(10, unitSize*0.28)}px 'IBM Plex Mono', monospace`;
+    ctx.font = `11px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    for(let i = minX; i <= maxX; i++){
-      if(i === 0 || i % 2 !== 0) continue;
-      const xPos = originX + i * unitSize;
-      const yPos = Math.max(5, Math.min(originY + 5, cssHeight - 20));
-      ctx.fillText(i, xPos, yPos);
+    for(let x = minX; x <= maxX; x += step){
+      const xVal = parseFloat(x.toPrecision(10));
+      if(Math.abs(xVal) < 1e-9) continue;
+      // Rotula intercalado para evitar sobreposição
+      if(Math.abs(xVal % (step * 2)) > 1e-9) continue;
+      
+      const sx = originX + xVal * unitSize;
+      const sy = Math.max(5, Math.min(originY + 5, cssHeight - 20));
+      ctx.fillText(xVal, sx, sy);
     }
+    
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for(let i = minY; i <= maxY; i++){
-      if(i === 0 || i % 2 !== 0) continue;
-      const yPos = originY - i * unitSize;
-      const xPos = Math.max(20, Math.min(originX - 6, cssWidth - 5));
-      ctx.fillText(i, xPos, yPos);
+    for(let y = minY; y <= maxY; y += step){
+      const yVal = parseFloat(y.toPrecision(10));
+      if(Math.abs(yVal) < 1e-9) continue;
+      if(Math.abs(yVal % (step * 2)) > 1e-9) continue;
+
+      const sy = originY - yVal * unitSize;
+      const sx = Math.max(20, Math.min(originX - 6, cssWidth - 5));
+      ctx.fillText(yVal, sx, sy);
     }
     
     // Origin 0
     ctx.textAlign = 'left'; ctx.fillStyle = '#2C3E50';
-    ctx.font = `600 ${Math.max(11, unitSize*0.32)}px 'Space Grotesk', sans-serif`;
+    ctx.font = `600 ${Math.max(11, Math.min(16, unitSize*0.32))}px 'Space Grotesk', sans-serif`;
     ctx.fillText('0', originX + 6, originY + 6);
 
     // Reta da Função Afim
@@ -670,10 +726,13 @@
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
 
+      const screenMinX = (-originX / unitSize);
+      const screenMaxX = ((cssWidth - originX) / unitSize);
+
       if(Math.abs(dx) > 1e-9){
         const m = dy / dx; const b = p1.y - m * p1.x;
-        const left = toScreen(minX - 1, m * (minX - 1) + b);
-        const right = toScreen(maxX + 1, m * (maxX + 1) + b);
+        const left = toScreen(screenMinX - 1, m * (screenMinX - 1) + b);
+        const right = toScreen(screenMaxX + 1, m * (screenMaxX + 1) + b);
         ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.moveTo(left.sx, left.sy); ctx.lineTo(right.sx, right.sy); ctx.stroke();
 
@@ -689,7 +748,6 @@
       }
     }
 
-    // Pontos
     points.forEach((p, idx) => {
       const s = toScreen(p.x, p.y);
       ctx.fillStyle = idx === 0 ? '#3182CE' : '#E53E3E';
@@ -721,7 +779,6 @@
     eqStr += (mFrac === '1') ? 'x' : (mFrac === '-1') ? '-x' : `${mFrac}x`;
     if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
 
-    // Calcula texto da Raiz
     let rootHtml = '';
     if (Math.abs(dy) > 1e-9) {
         const rootExact = fracLabel(-bNum, dy);
@@ -750,13 +807,12 @@
 
   function refresh(){ draw(); updateEquation(); }
 
-  // Interações Unificadas de Mouse
   let isDragging = false;
   let lastMouseX = 0, lastMouseY = 0;
   let hasMoved = false;
 
   container.addEventListener('mousedown', (e) => {
-    e.preventDefault(); // Previne comportamento nativo (cursor sumir)
+    e.preventDefault(); 
     isDragging = true; hasMoved = false;
     const rect = container.getBoundingClientRect();
     lastMouseX = e.clientX - rect.left;
@@ -825,7 +881,8 @@
     const planePos = toPlane(mx, my);
     
     unitSize *= zoomFactor;
-    unitSize = Math.max(15, Math.min(250, unitSize)); 
+    // Removido o limite superior de zoom, deixando totalmente infinito
+    unitSize = Math.max(0.001, unitSize); 
     
     originX = mx - planePos.x * unitSize;
     originY = my + planePos.y * unitSize;
@@ -918,7 +975,7 @@
   function getPos(e){ const rect = canvas.getBoundingClientRect(); const p = e.touches?e.touches[0]:e; return { x: p.clientX-rect.left, y: p.clientY-rect.top }; }
   
   function startDraw(e){ 
-    e.preventDefault(); // Previne comportamento nativo (cursor sumir)
+    e.preventDefault(); 
     pushHistory(); drawing=true; 
     const p=getPos(e); lastX=p.x; lastY=p.y; 
     
