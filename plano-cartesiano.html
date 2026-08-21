@@ -38,6 +38,16 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    
+    /* Previne seleção acidental de texto, o que faz o cursor sumir */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Permite selecionar texto apenas nos inputs */
+  input {
+    -webkit-user-select: auto;
+    user-select: auto;
   }
 
   header{
@@ -115,15 +125,17 @@
   
   .canvas-container.mode-pan { cursor: grab; }
   .canvas-container.mode-pan:active { cursor: grabbing; }
+  
+  /* URL Encoded SVG cursor para prevenir falhas no Chrome/Edge */
   .canvas-container.mode-draw {
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>') 0 16, crosshair;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'/%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'/%3E%3Cpath d='M2 2l7.586 7.586'/%3E%3Ccircle cx='11' cy='11' r='2'/%3E%3C/svg%3E") 0 16, crosshair;
   }
 
   #plane, #plane-draw {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    pointer-events: none; /* Eventos são tratados pelo container */
+    pointer-events: none;
   }
 
   #plane { z-index: 1; }
@@ -283,18 +295,18 @@
   /* ---------- FULLSCREEN DRAW DRAWER ---------- */
   .draw-drawer{
     position: fixed;
-    inset: 0; /* Cobre 100% da tela (top:0, left:0, bottom:0, right:0) */
+    inset: 0;
     width: 100vw;
     height: 100vh;
     background: var(--paper);
     color: var(--ink);
-    z-index: 100; /* Fica acima de tudo */
-    transform: translateY(100%); /* Começa fora da tela por baixo */
+    z-index: 100;
+    transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
   }
-  .draw-drawer.open{ transform: translateY(0); } /* Desliza pra cima */
+  .draw-drawer.open{ transform: translateY(0); }
 
   .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
   .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
@@ -444,15 +456,14 @@
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let cssWidth = 0, cssHeight = 0;
 
-  // Estado da câmera (Pan e Zoom)
-  let unitSize = 40; // Pixels por unidade matemática
-  let originX = 0; // Posição X da origem (0,0) na tela
-  let originY = 0; // Posição Y da origem (0,0) na tela
-  let mathCenterX = 0; // Coordenada matemática central X
-  let mathCenterY = 0; // Coordenada matemática central Y
+  let unitSize = 40;
+  let originX = 0; 
+  let originY = 0; 
+  let mathCenterX = 0; 
+  let mathCenterY = 0; 
 
   const points = []; 
-  let currentMode = 'point'; // point, pan, draw
+  let currentMode = 'point'; 
 
   const x1Input = document.getElementById('x1');
   const y1Input = document.getElementById('y1');
@@ -481,7 +492,6 @@
     drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
     if(prev.width > 0) drawCtx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, cssWidth, cssHeight);
     
-    // Manter o foco da câmera ao redimensionar a janela
     if(originX === 0 && originY === 0) {
         originX = cssWidth / 2;
         originY = cssHeight / 2;
@@ -526,13 +536,11 @@
   function draw(){
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-    // Calcular os limites visíveis da malha baseados no pan/zoom atual
     const minX = Math.floor(-originX / unitSize);
     const maxX = Math.ceil((cssWidth - originX) / unitSize);
     const minY = Math.floor((originY - cssHeight) / unitSize);
     const maxY = Math.ceil(originY / unitSize);
 
-    // Grid Lines
     ctx.lineWidth = 1;
     for(let i = minX; i <= maxX; i++){
       ctx.strokeStyle = (i % 5 === 0) ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
@@ -545,7 +553,6 @@
       ctx.beginPath(); ctx.moveTo(0, yPos); ctx.lineTo(cssWidth, yPos); ctx.stroke();
     }
 
-    // Axes
     ctx.strokeStyle = '#2C3E50'; ctx.lineWidth = 1.6;
     if(originY >= 0 && originY <= cssHeight){
       ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(cssWidth, originY); ctx.stroke();
@@ -554,7 +561,6 @@
       ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, cssHeight); ctx.stroke();
     }
 
-    // Labels
     ctx.fillStyle = '#718096';
     ctx.font = `${Math.max(10, unitSize*0.28)}px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
@@ -572,19 +578,16 @@
       ctx.fillText(i, xPos, yPos);
     }
     
-    // Origin 0
     ctx.textAlign = 'left'; ctx.fillStyle = '#2C3E50';
     ctx.font = `600 ${Math.max(11, unitSize*0.32)}px 'Space Grotesk', sans-serif`;
     ctx.fillText('0', originX + 6, originY + 6);
 
-    // Reta da Função Afim
     if(points.length === 2){
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
 
       if(Math.abs(dx) > 1e-9){
         const m = dy / dx; const b = p1.y - m * p1.x;
-        // Desenha reta cruzando a tela
         const left = toScreen(minX - 1, m * (minX - 1) + b);
         const right = toScreen(maxX + 1, m * (maxX + 1) + b);
         ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
@@ -602,7 +605,6 @@
       }
     }
 
-    // Pontos
     points.forEach((p, idx) => {
       const s = toScreen(p.x, p.y);
       ctx.fillStyle = idx === 0 ? '#3182CE' : '#E53E3E';
@@ -644,12 +646,12 @@
 
   function refresh(){ draw(); updateEquation(); }
 
-  // Interações Unificadas de Mouse
   let isDragging = false;
   let lastMouseX = 0, lastMouseY = 0;
   let hasMoved = false;
 
   container.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // Previne sumiço de cursor
     isDragging = true; hasMoved = false;
     const rect = container.getBoundingClientRect();
     lastMouseX = e.clientX - rect.left;
@@ -713,7 +715,6 @@
     isDragging = false;
   });
 
-  // ZOOM via Scroll
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoomFactor = Math.exp(-e.deltaY * 0.002);
@@ -745,7 +746,6 @@
     refresh();
   }, { passive: false });
 
-  // Botões de Modo
   const modes = ['point', 'pan', 'draw'];
   modes.forEach(m => {
     document.getElementById(`mode-${m}`).addEventListener('click', (e) => {
@@ -817,17 +817,26 @@
   function getPos(e){ const rect = canvas.getBoundingClientRect(); const p = e.touches?e.touches[0]:e; return { x: p.clientX-rect.left, y: p.clientY-rect.top }; }
   
   function startDraw(e){ 
-    e.preventDefault(); pushHistory(); drawing=true; 
+    e.preventDefault(); // Previne comportamento nativo (cursor sumir)
+    pushHistory(); drawing=true; 
     const p=getPos(e); lastX=p.x; lastY=p.y; 
-    ctx.beginPath(); ctx.arc(p.x, p.y, (tool==='eraser'?currentSize*1.6:currentSize)/2, 0, Math.PI*2); 
-    ctx.fillStyle=tool==='eraser'?'#ffffff':currentColor; ctx.fill(); 
+    
+    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+    
+    ctx.beginPath(); 
+    ctx.arc(p.x, p.y, (tool==='eraser'?currentSize*1.6:currentSize)/2, 0, Math.PI*2); 
+    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor; 
+    ctx.fill(); 
   }
   
   function moveDraw(e){ 
     if(!drawing) return; e.preventDefault(); 
     const p=getPos(e); 
-    ctx.strokeStyle=tool==='eraser'?'#ffffff':currentColor; 
-    ctx.lineWidth=tool==='eraser'?currentSize*1.6:currentSize; 
+    
+    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = tool === 'eraser' ? '#000' : currentColor; 
+    ctx.lineWidth = tool === 'eraser' ? currentSize*1.6 : currentSize; 
+    
     ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
     lastX=p.x; lastY=p.y; 
   }
