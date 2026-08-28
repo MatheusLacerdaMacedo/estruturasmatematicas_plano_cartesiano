@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* TEMA CLARO */
+    /* TEMA CLARO (Padrão) */
     --blueprint: #FFFFFF;
     --blueprint-deep: #F4F6F8;
     --grid-line: rgba(0,0,0,0.06);
@@ -23,9 +23,29 @@
     --p1: #3182CE;
     --p2: #E53E3E;
     --danger: #E53E3E;
+    --danger-bg: #FED7D7;
     --success: #38A169;
-    --radius: 4px;
+    --radius: 6px;
     font-size: 16px;
+  }
+
+  body.dark-theme {
+    /* TEMA ESCURO */
+    --blueprint: #0B1121;
+    --blueprint-deep: #070B15;
+    --grid-line: rgba(255,255,255,0.06);
+    --grid-line-strong: rgba(255,255,255,0.15);
+    --axis: #A0AEC0;
+    --paper: #111827;
+    --paper-line: #2D3748;
+    --ink: #F7FAFC;
+    --ink-soft: #A0AEC0;
+    --pencil: #F6AD55;
+    --pencil-dark: #DD6B20;
+    --p1: #63B3ED;
+    --p2: #FC8181;
+    --danger: #FC8181;
+    --danger-bg: #4A1D1D;
   }
 
   *{ box-sizing: border-box; }
@@ -39,33 +59,27 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    
-    /* Previne seleção acidental de texto, o que faz o cursor sumir */
     -webkit-user-select: none;
     user-select: none;
+    transition: background 0.3s, color 0.3s;
   }
 
-  input {
-    -webkit-user-select: auto;
-    user-select: auto;
-  }
+  input { -webkit-user-select: auto; user-select: auto; }
 
   header{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 32px;
+    padding: 16px 32px;
     border-bottom: 1px solid var(--paper-line);
     background: var(--blueprint-deep);
     flex-shrink: 0;
     gap: 20px;
+    z-index: 10;
   }
   
   @media (max-width: 700px){
-    header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+    header { flex-direction: column; align-items: flex-start; padding: 16px 20px; }
   }
 
   header .eyebrow{
@@ -85,23 +99,16 @@
     letter-spacing: -0.01em;
   }
 
-  header p{
-    margin: 0;
-    color: var(--ink-soft);
-    font-size: 0.92rem;
-    max-width: 700px;
-    line-height: 1.5;
-  }
+  header p{ margin: 0; color: var(--ink-soft); font-size: 0.92rem; max-width: 700px; line-height: 1.5; }
+
+  .header-actions { display: flex; gap: 10px; align-items: center; }
 
   main{
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
     flex: 1;
     overflow: hidden;
-  }
-
-  @media (max-width: 880px){
-    main{ grid-template-columns: 1fr; }
+    position: relative;
   }
 
   /* ---------- PLANE ---------- */
@@ -116,27 +123,17 @@
 
   .canvas-container {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    cursor: crosshair;
-    touch-action: none;
+    inset: 0; width: 100%; height: 100%;
+    cursor: crosshair; touch-action: none;
   }
-  
   .canvas-container.mode-pan { cursor: grab; }
   .canvas-container.mode-pan:active { cursor: grabbing; }
-  
-  .canvas-container.mode-draw {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'/%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'/%3E%3Cpath d='M2 2l7.586 7.586'/%3E%3Ccircle cx='11' cy='11' r='2'/%3E%3C/svg%3E") 0 16, crosshair;
-  }
 
   #plane, #plane-draw {
-    position: absolute;
-    top: 0; left: 0;
+    position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
     pointer-events: none;
   }
-
   #plane { z-index: 1; }
   #plane-draw { z-index: 2; }
 
@@ -144,9 +141,20 @@
   .panel{
     background: var(--paper);
     color: var(--ink);
-    padding: 26px 26px 32px;
+    padding: 26px 26px 80px; /* espaco extra para scroll mobile */
     height: 100%;
     overflow-y: auto;
+    position: relative;
+    z-index: 5;
+    transition: background 0.3s;
+  }
+
+  .panel-drag-handle {
+    display: none;
+    width: 40px; height: 5px;
+    background: var(--paper-line);
+    border-radius: 4px;
+    margin: 0 auto 16px;
   }
 
   .panel h2{
@@ -163,157 +171,110 @@
   .block{ margin-bottom: 28px; }
 
   .interaction-tools {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 16px;
-    background: var(--blueprint-deep);
-    padding: 6px;
-    border-radius: var(--radius);
-    border: 1px solid var(--paper-line);
+    display: flex; gap: 6px; margin-bottom: 16px;
+    background: var(--blueprint-deep); padding: 6px;
+    border-radius: var(--radius); border: 1px solid var(--paper-line);
   }
-  
   .interaction-tools button {
-    flex: 1;
-    background: transparent;
-    color: var(--ink-soft);
-    border: none;
-    box-shadow: none;
-    padding: 6px 4px;
-    font-size: 0.75rem;
+    flex: 1; background: transparent; color: var(--ink-soft);
+    border: none; box-shadow: none; padding: 6px 4px; font-size: 0.75rem;
   }
-
   .interaction-tools button.active {
-    background: var(--paper);
-    color: var(--ink);
-    border-radius: 3px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: var(--paper); color: var(--ink);
+    border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
 
-  .point-row{
-    display:flex;
-    align-items:center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
+  .point-row{ display:flex; align-items:center; gap: 10px; margin-bottom: 10px; }
   .point-dot{ width: 10px; height:10px; border-radius:50%; flex-shrink:0; }
   .point-dot.p1{ background: var(--p1); }
   .point-dot.p2{ background: var(--p2); }
 
-  .coord-inputs{
-    display:flex;
-    align-items:center;
-    gap: 6px;
-    font-size: 0.85rem;
-  }
-  .coord-inputs label{ color: var(--ink-soft); }
+  .coord-inputs{ display:flex; align-items:center; gap: 6px; font-size: 0.85rem; }
+  .coord-inputs label{ color: var(--ink-soft); font-weight: 500;}
   .coord-inputs input{
-    width: 58px;
-    padding: 6px 7px;
-    border: 1px solid var(--paper-line);
-    background: #fff;
-    border-radius: var(--radius);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--ink);
+    width: 58px; padding: 6px 7px;
+    border: 1px solid var(--paper-line); background: var(--blueprint-deep);
+    border-radius: var(--radius); font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem; color: var(--ink);
   }
 
-  .btn-row{
-    display:flex;
-    gap: 10px;
-    margin-top: 14px;
-    flex-wrap: wrap;
-  }
+  .btn-row{ display:flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
   button{
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 0.82rem;
-    padding: 9px 16px;
-    border-radius: var(--radius);
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--paper);
-    cursor: pointer;
-    transition: transform 0.08s ease, background 0.15s ease;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.82rem;
+    padding: 9px 16px; border-radius: var(--radius);
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    cursor: pointer; transition: transform 0.08s ease, filter 0.15s ease;
   }
-  button:hover{ background: #2A3B4C; }
+  button:hover{ filter: brightness(1.2); }
   button:active{ transform: translateY(1px); }
-
-  #open-draw-btn {
-    white-space: nowrap;
-    height: fit-content;
-    font-size: 0.9rem;
-    padding: 12px 24px;
-  }
-
-  button.secondary{
-    background: transparent;
-    color: var(--ink);
-    border-color: var(--paper-line);
-  }
+  button.secondary{ background: transparent; color: var(--ink); border-color: var(--paper-line); }
   button.secondary:hover{ background: var(--blueprint-deep); }
 
+  .error-msg {
+    display: none; color: var(--danger); font-size: 0.75rem;
+    margin-top: 8px; background: var(--danger-bg); padding: 8px 10px; border-radius: 4px;
+  }
+
+  /* Domain & Table */
+  .domain-row { display: flex; gap: 10px; margin-top: 10px; }
+  
+  .val-table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem;
+    background: var(--blueprint-deep); border-radius: var(--radius); overflow: hidden;
+  }
+  .val-table th { background: var(--paper-line); color: var(--ink); padding: 6px; font-weight: 600;}
+  .val-table td { padding: 6px; text-align: center; border-bottom: 1px solid var(--paper-line); color: var(--ink-soft);}
+
   .equation-box{
-    background: var(--blueprint-deep);
-    color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: var(--radius);
-    padding: 18px 18px;
-    text-align:center;
+    background: var(--blueprint-deep); color: var(--ink);
+    border: 1px solid var(--paper-line); border-radius: var(--radius);
+    padding: 18px; text-align:center;
   }
-
   .equation-box .eq{
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--pencil-dark);
-    letter-spacing: 0.01em;
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700;
+    color: var(--pencil-dark); letter-spacing: 0.01em;
   }
-
-  .equation-box .sub{
-    font-size: 0.76rem;
-    color: var(--ink-soft);
-    margin-top: 8px;
-    line-height: 1.5;
-  }
+  .equation-box .sub{ font-size: 0.76rem; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
 
   .steps{ font-size: 0.82rem; color: var(--ink-soft); line-height: 1.9; }
   .steps b{ color: var(--ink); }
 
   .empty-state, .vertical-warning{
-    font-size: 0.85rem;
-    color: var(--ink-soft);
-    line-height: 1.6;
-    padding: 14px 0 14px 12px;
-    border-left: 2px solid var(--pencil);
+    font-size: 0.85rem; color: var(--ink-soft); line-height: 1.6;
+    padding: 14px 0 14px 12px; border-left: 2px solid var(--pencil);
   }
   .vertical-warning { color: var(--danger); border-left-color: var(--danger); }
   .hint{ font-size: 0.76rem; color: var(--ink-soft); margin-top: 10px; opacity: 0.85; }
 
+  /* ---------- MOBILE BOTTOM SHEET ---------- */
+  @media (max-width: 880px) {
+    main { display: block; height: calc(100vh - 100px); }
+    .plane-wrap { height: 100%; }
+    .panel {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 60vh;
+      border-top: 1px solid var(--paper-line); border-radius: 20px 20px 0 0;
+      transform: translateY(calc(100% - 60px)); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      padding-top: 16px;
+    }
+    .panel.open { transform: translateY(0); }
+    .panel-drag-handle { display: block; }
+  }
+
   /* ---------- FULLSCREEN DRAW DRAWER ---------- */
   .draw-drawer{
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    background: var(--paper);
-    color: var(--ink);
-    z-index: 100;
-    transform: translateY(100%);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    background: var(--paper); color: var(--ink); z-index: 100;
+    transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
   }
   .draw-drawer.open{ transform: translateY(0); }
-
   .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
   .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
   .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;}
-
   .tool-row{ display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
   .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: auto; flex-shrink: 0; }
-
   .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
   .swatch.active{ border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
   #custom-color{ width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
@@ -321,13 +282,11 @@
   .brush-size-label{ font-size: 0.75rem; color: var(--ink-soft); width: 34px; text-align: right; flex-shrink: 0; }
   .tool-btn{ padding: 7px 12px; font-size: 0.75rem; background: transparent; color: var(--ink); border-color: var(--paper-line); }
   .tool-btn.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
   .draw-canvas-wrap{
     flex: 1; position: relative; overflow: hidden; touch-action: none;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(0,0,0,0.045) 24px),
-      repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(0,0,0,0.045) 24px),
-      #ffffff;
+    background: repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
+                repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
+                var(--paper);
   }
   #draw-canvas{ display:block; width: 100%; height: 100%; cursor: crosshair; }
   .draw-footer{ padding: 14px 32px; display:flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--paper-line); flex-shrink: 0; }
@@ -337,11 +296,14 @@
 
 <header>
   <div>
-    <p class="eyebrow">Ferramenta de estudo</p>
+    <p class="eyebrow">Ferramenta de Estudo Avançada</p>
     <h1>Plano Cartesiano — Funções</h1>
-    <p>Estude funções do 1º e 2º grau. Marque pontos, arraste o plano infinito e analise propriedades matemáticas.</p>
+    <p>Estude funções do 1º e 2º grau. Marque pontos, controle o domínio e analise tabelas de valores instantâneas.</p>
   </div>
-  <button id="open-draw-btn">✎ Rascunho Livre</button>
+  <div class="header-actions">
+    <button id="theme-toggle" class="secondary">🌙 Escuro</button>
+    <button id="open-draw-btn">✎ Rascunho Livre</button>
+  </div>
 </header>
 
 <main>
@@ -353,6 +315,7 @@
   </div>
 
   <div class="panel">
+    <div class="panel-drag-handle" id="mobile-drag"></div>
     
     <div class="block" id="function-type-section">
       <h2>Tipo de Função</h2>
@@ -363,14 +326,13 @@
     </div>
 
     <div class="block">
-      <h2>Interação</h2>
+      <h2>Interação do Gráfico</h2>
       <div class="interaction-tools">
         <button id="mode-point" class="active">📍 Marcar</button>
         <button id="mode-pan">✋ Mover</button>
         <button id="mode-draw">✎ Desenhar</button>
       </div>
-      <!-- Alternância de Entrada (Sincronizado) -->
-      <div class="interaction-tools" style="margin-bottom: 24px;">
+      <div class="interaction-tools" style="margin-bottom: 12px;">
         <button class="input-toggle active" data-val="mouse">🖱 Mouse</button>
         <button class="input-toggle" data-val="pen">🖊 Mesa Digitalizadora</button>
       </div>
@@ -382,7 +344,21 @@
         <label for="eq-input" style="font-weight:700; font-size:1.1rem; color:var(--ink);">y = </label>
         <input type="text" id="eq-input" placeholder="ex: 2x - 3" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
-      <p class="hint" style="margin-top: 8px;">Escreva a equação no formato <b id="hint-format">mx + b</b> para gerar o gráfico.</p>
+      <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato.</div>
+      <p class="hint" style="margin-top: 8px;">Escreva no formato <b id="hint-format">mx + b</b> (suporta frações ex: 1/2x).</p>
+      
+      <!-- Domínio -->
+      <div class="domain-row">
+        <div class="coord-inputs">
+            <label>Domínio: x Mín</label>
+            <input type="number" id="domain-min" placeholder="-∞">
+        </div>
+        <div class="coord-inputs">
+            <label>x Máx</label>
+            <input type="number" id="domain-max" placeholder="+∞">
+        </div>
+      </div>
+
       <div class="btn-row">
         <button id="apply-eq-btn">Gerar Gráfico e Focar</button>
       </div>
@@ -393,26 +369,31 @@
       <div class="point-row">
         <span class="point-dot p1"></span>
         <div class="coord-inputs">
-          <label for="x1">x₁</label>
-          <input type="number" id="x1" step="0.5" placeholder="—">
-          <label for="y1">y₁</label>
-          <input type="number" id="y1" step="0.5" placeholder="—">
+          <label>x₁</label><input type="number" id="x1" step="0.5">
+          <label>y₁</label><input type="number" id="y1" step="0.5">
         </div>
       </div>
       <div class="point-row">
         <span class="point-dot p2"></span>
         <div class="coord-inputs">
-          <label for="x2">x₂</label>
-          <input type="number" id="x2" step="0.5" placeholder="—">
-          <label for="y2">y₂</label>
-          <input type="number" id="y2" step="0.5" placeholder="—">
+          <label>x₂</label><input type="number" id="x2" step="0.5">
+          <label>y₂</label><input type="number" id="y2" step="0.5">
         </div>
       </div>
       <div class="btn-row">
         <button id="apply-btn">Aplicar coordenadas</button>
         <button id="clear-btn" class="secondary">Limpar Gráfico</button>
-        <button id="clear-plane-draw-btn" class="secondary" style="display:none;">Limpar Desenho</button>
       </div>
+    </div>
+
+    <div class="block">
+      <h2>Tabela de Valores</h2>
+      <table class="val-table">
+        <thead><tr><th>X</th><th>Y</th></tr></thead>
+        <tbody id="table-body">
+            <tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="block">
@@ -424,21 +405,19 @@
   </div>
 </main>
 
+<!-- RASCUNHO LIVRE -->
 <aside id="draw-drawer" class="draw-drawer" aria-hidden="true">
   <div class="draw-header">
     <h2>Quadro de Rascunho</h2>
     <button id="draw-close" class="secondary">Fechar ✕</button>
   </div>
-
   <div class="draw-toolbar">
     <div class="tool-row">
       <span class="row-label">Entrada</span>
       <button class="tool-btn active input-toggle" data-val="mouse">🖱 Mouse</button>
       <button class="tool-btn input-toggle" data-val="pen">🖊 Mesa (Pressão)</button>
     </div>
-
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-
     <div class="tool-row">
       <span class="row-label">Cor</span>
       <button class="swatch active" style="background:#1A202C" data-color="#1A202C"></button>
@@ -461,67 +440,71 @@
       <button id="tool-eraser" class="tool-btn">▭ Borracha</button>
     </div>
   </div>
-
   <div class="draw-canvas-wrap"><canvas id="draw-canvas"></canvas></div>
-
   <div class="draw-footer">
     <button id="draw-undo" class="secondary">↺ Desfazer</button>
     <button id="draw-clear" class="secondary">🗑 Limpar tudo</button>
-    <button id="draw-save">⬇ Baixar PNG</button>
   </div>
 </aside>
 
-<!-- GESTÃO GLOBAL DA ENTRADA (MOUSE VS MESA) -->
 <script>
+  // TEMA ESCURO / MOBILE BOTTOM SHEET / ENTRADAS
+  const themeBtn = document.getElementById('theme-toggle');
+  themeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    themeBtn.innerText = document.body.classList.contains('dark-theme') ? '☀️ Claro' : '🌙 Escuro';
+    if(typeof forceRefresh === 'function') forceRefresh(); // Chama função de redraw global
+  });
+
+  const panel = document.querySelector('.panel');
+  document.getElementById('mobile-drag').addEventListener('click', () => panel.classList.toggle('open'));
+
   window.usePenPressure = false;
-  const inputToggles = document.querySelectorAll('.input-toggle');
-  inputToggles.forEach(btn => {
+  document.querySelectorAll('.input-toggle').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const val = e.target.dataset.val;
       window.usePenPressure = (val === 'pen');
-      inputToggles.forEach(b => {
-        if (b.dataset.val === val) b.classList.add('active');
-        else b.classList.remove('active');
-      });
+      document.querySelectorAll('.input-toggle').forEach(b => b.classList.toggle('active', b.dataset.val === val));
     });
   });
+
+  // VARIAVEIS DE CORES DINÂMICAS DO CSS (Para o Canvas)
+  function getThemeColors() {
+    const style = getComputedStyle(document.body);
+    return {
+      axis: style.getPropertyValue('--axis').trim(),
+      gridStrong: style.getPropertyValue('--grid-line-strong').trim(),
+      gridSoft: style.getPropertyValue('--grid-line').trim(),
+      ink: style.getPropertyValue('--ink').trim(),
+      inkSoft: style.getPropertyValue('--ink-soft').trim()
+    };
+  }
 </script>
 
-<!-- SCRIPT DO PLANO CARTESIANO MATEMÁTICO -->
 <script>
+// SCRIPT PRINCIPAL MATEMÁTICO E CANVAS
 (function(){
   const container = document.getElementById('canvas-container');
   const canvas = document.getElementById('plane');
   const ctx = canvas.getContext('2d');
-
   const drawLayer = document.getElementById('plane-draw');
   const drawCtx = drawLayer.getContext('2d');
 
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let cssWidth = 0, cssHeight = 0;
-
-  let unitSize = 40; 
-  let originX = 0; 
-  let originY = 0; 
-  let mathCenterX = 0; 
-  let mathCenterY = 0; 
+  let unitSize = 40; let originX = 0; let originY = 0; 
+  let mathCenterX = 0; let mathCenterY = 0; 
 
   const points = []; 
   let currentMode = 'point'; 
-  
   let funcType = 'linear'; // 'linear' ou 'quadratic'
-  let mathModel = null; // { type: 'quadratic', a, b, c }
+  let mathModel = null; 
 
-  const x1Input = document.getElementById('x1');
-  const y1Input = document.getElementById('y1');
-  const x2Input = document.getElementById('x2');
-  const y2Input = document.getElementById('y2');
-  const equationArea = document.getElementById('equation-area');
-  const clearDrawBtn = document.getElementById('clear-plane-draw-btn');
-  const eqInput = document.getElementById('eq-input');
-  const applyEqBtn = document.getElementById('apply-eq-btn');
+  const domMinInput = document.getElementById('domain-min');
+  const domMaxInput = document.getElementById('domain-max');
+  const eqError = document.getElementById('eq-error');
 
-  // Alternar Tipo de Função
+  // Controle de Funções UI
   document.querySelectorAll('.func-toggle').forEach(btn => {
     btn.addEventListener('click', (e) => {
         document.querySelectorAll('.func-toggle').forEach(b => b.classList.remove('active'));
@@ -530,65 +513,55 @@
 
         if (funcType === 'linear') {
             document.getElementById('points-section').style.display = 'block';
-            eqInput.placeholder = 'ex: 2x - 3';
+            document.getElementById('eq-input').placeholder = 'ex: 2x - 3 ou 1/2x + 1';
             document.getElementById('hint-format').innerText = 'mx + b';
             document.getElementById('mode-point').style.display = 'block';
         } else {
-            // Esconde os pontos para quadrática (para manter simples, usa-se a equação)
             document.getElementById('points-section').style.display = 'none';
-            eqInput.placeholder = 'ex: x² - 4x + 4';
+            document.getElementById('eq-input').placeholder = 'ex: x² - 4x + 4 ou -x^2+9';
             document.getElementById('hint-format').innerText = 'ax² + bx + c';
             document.getElementById('mode-point').style.display = 'none';
             if (currentMode === 'point') document.getElementById('mode-pan').click();
         }
-        
-        mathModel = null;
-        points.length = 0;
-        updateInputsFromPoints();
+        mathModel = null; points.length = 0;
+        eqError.style.display = 'none';
         refresh();
     });
   });
 
   function resizeCanvas(){
     const rect = container.getBoundingClientRect();
-    cssWidth = rect.width;
-    cssHeight = rect.height;
+    cssWidth = rect.width; cssHeight = rect.height;
     dpr = Math.max(window.devicePixelRatio || 1, 1);
 
-    canvas.width = cssWidth * dpr;
-    canvas.height = cssHeight * dpr;
+    canvas.width = cssWidth * dpr; canvas.height = cssHeight * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const prev = document.createElement('canvas');
     prev.width = drawLayer.width; prev.height = drawLayer.height;
     if(drawLayer.width > 0) prev.getContext('2d').drawImage(drawLayer, 0, 0);
 
-    drawLayer.width = cssWidth * dpr;
-    drawLayer.height = cssHeight * dpr;
+    drawLayer.width = cssWidth * dpr; drawLayer.height = cssHeight * dpr;
     drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
     if(prev.width > 0) drawCtx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, cssWidth, cssHeight);
 
     if(originX === 0 && originY === 0) {
-        originX = cssWidth / 2;
-        originY = cssHeight / 2;
+        originX = cssWidth / 2; originY = cssHeight / 2;
     } else {
         originX = (cssWidth / 2) - (mathCenterX * unitSize);
         originY = (cssHeight / 2) + (mathCenterY * unitSize);
     }
     draw();
   }
+  
+  window.forceRefresh = () => draw(); // Exposto para o Dark Mode disparar redraw
 
   function toScreen(x, y){ return { sx: originX + x * unitSize, sy: originY - y * unitSize }; }
   function toPlane(sx, sy){ return { x: (sx - originX) / unitSize, y: (originY - sy) / unitSize }; }
   function snap(v){ return Math.round(v * 2) / 2; }
   
-  function gcd(a,b){
-    a = Math.abs(a); b = Math.abs(b);
-    while(b){ [a,b] = [b, a % b]; }
-    return a || 1;
-  }
-
+  function gcd(a,b){ a = Math.abs(a); b = Math.abs(b); while(b){ [a,b] = [b, a % b]; } return a || 1; }
   function fracLabel(num, den){
     let n = num, d = den;
     const mult = (Math.round(n*2) !== n*2 || Math.round(d*2) !== d*2) ? 1 : 2;
@@ -598,86 +571,80 @@
     return d === 1 ? `${n}` : `${n}/${d}`;
   }
 
-  function updateInputsFromPoints() {
-    x1Input.value = points[0] ? points[0].x : '';
-    y1Input.value = points[0] ? points[0].y : '';
-    x2Input.value = points[1] ? points[1].x : '';
-    y2Input.value = points[1] ? points[1].y : '';
-  }
-
-  // Analisador Avançado (Linear e Quadrática)
+  // ROBUST PARSER
   function parseEquation(eq, type) {
-    // Normalização bruta
-    eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '').replace(/²/g, '^2');
+    eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '').replace(/²/g, '^2').replace(/\*\*/g, '^');
     if (eq === '') return null;
 
+    let cleanEq = eq.replace(/(?!^)(?<![\^\/\*\+])-/g, '+-'); // Protege sinais de negativos corretamente
+    let terms = cleanEq.split('+').filter(t => t !== '');
+    
+    let a = 0, b = 0, c = 0; let valid = true;
+
+    terms.forEach(term => {
+        let coeff = 1;
+        let hasX2 = term.includes('x^2');
+        let hasX = !hasX2 && term.includes('x');
+        
+        let numStr = term.replace('x^2', '').replace('x', '').replace(/\*/g, '');
+        
+        if (numStr === '') coeff = 1;
+        else if (numStr === '-') coeff = -1;
+        else if (numStr.includes('/')) {
+            let parts = numStr.split('/');
+            coeff = parseFloat(parts[0]) / parseFloat(parts[1]);
+        } else coeff = parseFloat(numStr);
+
+        if (isNaN(coeff)) valid = false;
+
+        if (hasX2) a += coeff;
+        else if (hasX) b += coeff;
+        else c += coeff;
+    });
+
+    if (!valid) return null;
     if (type === 'linear') {
-        if (eq.includes('x^2')) return null;
-        if (!eq.includes('x')) {
-            let b = parseFloat(eq);
-            return isNaN(b) ? null : { type: 'linear', m: 0, b: b };
-        }
-        let parts = eq.replace(/-/g, '+-').split('+').filter(p => p !== '');
-        let m = 0, b = 0;
-        parts.forEach(p => {
-            if (p.includes('x')) {
-                let val = p.replace('x', '');
-                m = val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
-            } else b += parseFloat(p);
-        });
-        if (isNaN(m) || isNaN(b)) return null;
-        return { type: 'linear', m, b };
-    } 
-    else if (type === 'quadratic') {
-        if (!eq.includes('x^2')) return null;
-        let parts = eq.replace(/-/g, '+-').split('+').filter(p => p !== '');
-        let a = 0, b = 0, c = 0;
-        parts.forEach(p => {
-            if (p.includes('x^2')) {
-                let val = p.replace('x^2', '');
-                a += val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
-            } else if (p.includes('x')) {
-                let val = p.replace('x', '');
-                b += val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
-            } else c += parseFloat(p);
-        });
-        if (isNaN(a) || isNaN(b) || isNaN(c) || a === 0) return null;
+        if (a !== 0) return null; 
+        return { type: 'linear', m: b, b: c };
+    } else {
+        if (a === 0) return { type: 'linear', m: b, b: c }; 
         return { type: 'quadratic', a, b, c };
     }
   }
 
-  applyEqBtn.addEventListener('click', () => {
-    const val = eqInput.value;
+  document.getElementById('apply-eq-btn').addEventListener('click', () => {
+    eqError.style.display = 'none';
+    const val = document.getElementById('eq-input').value;
     if(!val.trim()) return;
-    const parsed = parseEquation(val, funcType);
     
+    const parsed = parseEquation(val, funcType);
     if(!parsed) {
-        alert(`Equação inválida. Tente usar o formato correto para a função do ${funcType === 'linear' ? '1º' : '2º'} grau.`);
+        eqError.style.display = 'block';
+        document.getElementById('eq-input').style.borderColor = 'var(--danger)';
         return;
     }
+    document.getElementById('eq-input').style.borderColor = 'var(--paper-line)';
 
     let focusPts = [];
-
-    if (funcType === 'linear') {
-        mathModel = null; // Linear é desenhada via array 'points'
+    if (funcType === 'linear' && parsed.type === 'linear') {
+        mathModel = parsed;
         points.length = 0;
         points.push({ x: 0, y: parsed.b });
-        
         if (Math.abs(parsed.m) > 1e-9) {
             if (Math.abs(parsed.b) < 1e-9) points.push({ x: 1, y: parsed.m });
             else points.push({ x: parseFloat((-parsed.b / parsed.m).toPrecision(10)), y: 0 }); 
         } else points.push({ x: 1, y: parsed.b });
         
-        updateInputsFromPoints();
+        document.getElementById('x1').value = points[0].x; document.getElementById('y1').value = points[0].y;
+        document.getElementById('x2').value = points[1].x; document.getElementById('y2').value = points[1].y;
         focusPts = points;
     } else {
         mathModel = parsed;
-        points.length = 0; // Limpa os pontos, pois a quadrática usa mathModel
-        
-        focusPts.push({ x: 0, y: parsed.c }); // Intersecção com Y
+        points.length = 0; 
+        focusPts.push({ x: 0, y: parsed.c }); 
         const xv = -parsed.b / (2 * parsed.a);
-        const yv = -(parsed.b * Math.pow(xv, 2) + parsed.b * xv + parsed.c); // Evita falha do delta
-        focusPts.push({ x: xv, y: yv }); // Vértice
+        const yv = -(parsed.b * Math.pow(xv, 2) + parsed.b * xv + parsed.c); 
+        focusPts.push({ x: xv, y: yv }); 
         
         const delta = parsed.b * parsed.b - 4 * parsed.a * parsed.c;
         if (delta >= 0) {
@@ -686,54 +653,36 @@
         }
     }
 
-    // AUTO-ZOOM ENQUADRAMENTO
+    // AUTO-ZOOM
     let pMinX = focusPts[0].x, pMaxX = focusPts[0].x;
     let pMinY = focusPts[0].y, pMaxY = focusPts[0].y;
-    
     focusPts.forEach(p => {
-        if(p.x < pMinX) pMinX = p.x;
-        if(p.x > pMaxX) pMaxX = p.x;
-        if(p.y < pMinY) pMinY = p.y;
-        if(p.y > pMaxY) pMaxY = p.y;
+        if(p.x < pMinX) pMinX = p.x; if(p.x > pMaxX) pMaxX = p.x;
+        if(p.y < pMinY) pMinY = p.y; if(p.y > pMaxY) pMaxY = p.y;
     });
 
     const marginX = Math.abs(pMaxX - pMinX) * 0.3 + 2;
     const marginY = Math.abs(pMaxY - pMinY) * 0.3 + 2;
+    pMinX -= marginX; pMaxX += marginX; pMinY -= marginY; pMaxY += marginY;
 
-    pMinX -= marginX; pMaxX += marginX;
-    pMinY -= marginY; pMaxY += marginY;
-
-    let rangeX = pMaxX - pMinX;
-    let rangeY = pMaxY - pMinY;
-
+    let rangeX = pMaxX - pMinX, rangeY = pMaxY - pMinY;
     if (rangeX < 8) { pMinX -= 4; pMaxX += 4; rangeX = pMaxX - pMinX; }
     if (rangeY < 8) { pMinY -= 4; pMaxY += 4; rangeY = pMaxY - pMinY; }
 
-    const scaleX = cssWidth / rangeX;
-    const scaleY = cssHeight / rangeY;
-
-    unitSize = Math.min(scaleX, scaleY);
-    unitSize = Math.max(0.001, unitSize); 
-
-    const cx = (pMinX + pMaxX) / 2;
-    const cy = (pMinY + pMaxY) / 2;
-
+    unitSize = Math.max(0.001, Math.min(cssWidth / rangeX, cssHeight / rangeY)); 
+    const cx = (pMinX + pMaxX) / 2, cy = (pMinY + pMaxY) / 2;
     originX = (cssWidth / 2) - cx * unitSize;
     originY = (cssHeight / 2) + cy * unitSize;
-    mathCenterX = cx;
-    mathCenterY = cy;
+    mathCenterX = cx; mathCenterY = cy;
 
     drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
     refresh();
   });
 
-  eqInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') applyEqBtn.click();
-  });
+  document.getElementById('eq-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('apply-eq-btn').click(); });
 
   function getGridStep(uSize) {
-      const targetPixels = 50; 
-      const targetStep = targetPixels / uSize;
+      const targetStep = 50 / uSize;
       const mag = Math.pow(10, Math.floor(Math.log10(targetStep)));
       const res = targetStep / mag; 
       if (res <= 2) return 1 * mag;
@@ -743,54 +692,41 @@
 
   function drawPOI(x, y, color, label){
       const pt = toScreen(x, y);
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(pt.sx, pt.sy, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(pt.sx, pt.sy, 5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = '#2C3E50'; ctx.font = `600 11px 'IBM Plex Mono', monospace`;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-      ctx.fillText(`${label}(${x.toFixed(1).replace('.0','').replace('.',',')}, ${y.toFixed(1).replace('.0','').replace('.',',')})`, pt.sx + 9, pt.sy - 7);
+      const tc = getThemeColors(); ctx.fillStyle = tc.ink;
+      ctx.font = `600 11px 'IBM Plex Mono', monospace`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.fillText(`${label}(${x.toFixed(1).replace('.0','').replace('.',',')}, ${y.toFixed(1).replace('.0','').replace('.',',')})`, pt.sx + 8, pt.sy - 6);
   }
 
   function draw(){
     ctx.clearRect(0, 0, cssWidth, cssHeight);
-
+    const tc = getThemeColors();
     const step = getGridStep(unitSize);
-    const screenMinX = (-originX / unitSize);
-    const screenMaxX = ((cssWidth - originX) / unitSize);
-
-    const minX = Math.floor(screenMinX / step) * step;
-    const maxX = Math.ceil(screenMaxX / step) * step;
-    const minY = Math.floor(((originY - cssHeight) / unitSize) / step) * step;
-    const maxY = Math.ceil((originY / unitSize) / step) * step;
+    const screenMinX = (-originX / unitSize), screenMaxX = ((cssWidth - originX) / unitSize);
+    const minX = Math.floor(screenMinX / step) * step, maxX = Math.ceil(screenMaxX / step) * step;
+    const minY = Math.floor(((originY - cssHeight) / unitSize) / step) * step, maxY = Math.ceil((originY / unitSize) / step) * step;
 
     // Grid e Eixos
     ctx.lineWidth = 1;
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
-      const isMajor = Math.abs(xVal % (step * 5)) < 1e-9;
-      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
+      ctx.strokeStyle = Math.abs(xVal % (step * 5)) < 1e-9 ? tc.gridStrong : tc.gridSoft;
       const sx = originX + xVal * unitSize;
       ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
     }
     for(let y = minY; y <= maxY; y += step){
       const yVal = parseFloat(y.toPrecision(10));
-      const isMajor = Math.abs(yVal % (step * 5)) < 1e-9;
-      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)';
+      ctx.strokeStyle = Math.abs(yVal % (step * 5)) < 1e-9 ? tc.gridStrong : tc.gridSoft;
       const sy = originY - yVal * unitSize;
       ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(cssWidth, sy); ctx.stroke();
     }
 
-    ctx.strokeStyle = '#2C3E50'; ctx.lineWidth = 1.6;
-    if(originY >= 0 && originY <= cssHeight){
-      ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(cssWidth, originY); ctx.stroke();
-    }
-    if(originX >= 0 && originX <= cssWidth){
-      ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, cssHeight); ctx.stroke();
-    }
+    ctx.strokeStyle = tc.axis; ctx.lineWidth = 1.6;
+    if(originY >= 0 && originY <= cssHeight){ ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(cssWidth, originY); ctx.stroke(); }
+    if(originX >= 0 && originX <= cssWidth){ ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, cssHeight); ctx.stroke(); }
 
-    // Labels de Grid
-    ctx.fillStyle = '#718096';
-    ctx.font = `11px 'IBM Plex Mono', monospace`;
+    ctx.fillStyle = tc.inkSoft; ctx.font = `11px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
@@ -804,107 +740,119 @@
       if(Math.abs(yVal) < 1e-9 || Math.abs(yVal % (step * 2)) > 1e-9) continue;
       ctx.fillText(yVal, Math.max(20, Math.min(originX - 6, cssWidth - 5)), originY - yVal * unitSize);
     }
-    
-    ctx.textAlign = 'left'; ctx.fillStyle = '#2C3E50';
-    ctx.font = `600 ${Math.max(11, Math.min(16, unitSize*0.32))}px 'Space Grotesk', sans-serif`;
+    ctx.textAlign = 'left'; ctx.fillStyle = tc.axis; ctx.font = `600 12px 'Space Grotesk', sans-serif`;
     ctx.fillText('0', originX + 6, originY + 6);
 
-    // FUNÇÃO QUADRÁTICA
+    // Domínio Restrictions
+    const dMin = parseFloat(domMinInput.value); const dMax = parseFloat(domMaxInput.value);
+    const hasDMin = !isNaN(dMin); const hasDMax = !isNaN(dMax);
+    const plotMinX = hasDMin ? Math.max(screenMinX, dMin) : screenMinX;
+    const plotMaxX = hasDMax ? Math.min(screenMaxX, dMax) : screenMaxX;
+
+    // DESENHO QUADRÁTICO
     if (funcType === 'quadratic' && mathModel && mathModel.type === 'quadratic') {
         const { a, b, c } = mathModel;
-        ctx.strokeStyle = '#E8A33D'; 
-        ctx.lineWidth = 2.4;
-        ctx.beginPath();
+        ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4; ctx.beginPath();
         
-        const qStep = (screenMaxX - screenMinX) / 200; // Desenha 200 segmentos p/ ficar suave
-        for(let x = screenMinX; x <= screenMaxX; x += qStep){
-            const y = a*x*x + b*x + c;
-            const pt = toScreen(x, y);
-            if(x === screenMinX) ctx.moveTo(pt.sx, pt.sy);
-            else ctx.lineTo(pt.sx, pt.sy);
+        if (plotMinX <= plotMaxX) {
+            const qStep = (plotMaxX - plotMinX) / 200; 
+            for(let x = plotMinX; x <= plotMaxX + 0.0001; x += qStep){
+                const y = a*x*x + b*x + c;
+                const pt = toScreen(x, y);
+                if(x === plotMinX) ctx.moveTo(pt.sx, pt.sy); else ctx.lineTo(pt.sx, pt.sy);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
 
-        // Pontos Notáveis
-        drawPOI(0, c, '#3182CE', 'C'); // Corte Y
+        // POIs apenas se dentro do domínio
+        if (!hasDMin || 0 >= dMin) if (!hasDMax || 0 <= dMax) drawPOI(0, c, '#3182CE', 'C'); 
         const xv = -b / (2 * a);
-        const yv = -(b*b - 4*a*c) / (4 * a);
-        drawPOI(xv, yv, '#E53E3E', 'V'); // Vértice
+        if (!hasDMin || xv >= dMin) if (!hasDMax || xv <= dMax) drawPOI(xv, -(b*b - 4*a*c) / (4 * a), '#E53E3E', 'V'); 
 
         const delta = b*b - 4*a*c;
         if (delta >= 0) {
-            const x1 = (-b + Math.sqrt(delta)) / (2 * a);
-            const x2 = (-b - Math.sqrt(delta)) / (2 * a);
-            drawPOI(x1, 0, '#38A169', 'R1');
-            if (delta > 0 && Math.abs(x1 - x2) > 1e-9) drawPOI(x2, 0, '#38A169', 'R2');
+            const x1 = (-b + Math.sqrt(delta)) / (2 * a), x2 = (-b - Math.sqrt(delta)) / (2 * a);
+            if (!hasDMin || x1 >= dMin) if (!hasDMax || x1 <= dMax) drawPOI(x1, 0, '#38A169', 'R1');
+            if (delta > 0 && Math.abs(x1 - x2) > 1e-9) {
+                if (!hasDMin || x2 >= dMin) if (!hasDMax || x2 <= dMax) drawPOI(x2, 0, '#38A169', 'R2');
+            }
         }
     }
     
-    // FUNÇÃO LINEAR
-    if (funcType === 'linear' && points.length === 2) {
+    // DESENHO LINEAR
+    if (funcType === 'linear' && points.length === 2 && plotMinX <= plotMaxX) {
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
 
       if(Math.abs(dx) > 1e-9){
         const m = dy / dx; const b = p1.y - m * p1.x;
-        const left = toScreen(screenMinX - 1, m * (screenMinX - 1) + b);
-        const right = toScreen(screenMaxX + 1, m * (screenMaxX + 1) + b);
+        const left = toScreen(plotMinX, m * plotMinX + b);
+        const right = toScreen(plotMaxX, m * plotMaxX + b);
         ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.moveTo(left.sx, left.sy); ctx.lineTo(right.sx, right.sy); ctx.stroke();
-
-        const corner = toScreen(p2.x, p1.y);
-        const a1 = toScreen(p1.x, p1.y); const a2 = toScreen(p2.x, p2.y);
-        ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(44,62,80,0.4)'; ctx.lineWidth = 1.3;
-        ctx.beginPath(); ctx.moveTo(a1.sx, a1.sy); ctx.lineTo(corner.sx, corner.sy); ctx.lineTo(a2.sx, a2.sy); ctx.stroke();
-        ctx.setLineDash([]);
       } else {
-        const sx = toScreen(p1.x, 0).sx;
-        ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
-        ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
+        // Vertical line
+        if(p1.x >= plotMinX && p1.x <= plotMaxX){
+            const sx = toScreen(p1.x, 0).sx;
+            ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
+            ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
+        }
       }
-
       points.forEach((p, idx) => {
-        drawPOI(p.x, p.y, idx === 0 ? '#3182CE' : '#E53E3E', `P${idx+1}`);
+          if (!hasDMin || p.x >= dMin) if (!hasDMax || p.x <= dMax) drawPOI(p.x, p.y, idx === 0 ? '#3182CE' : '#E53E3E', `P${idx+1}`);
       });
     }
   }
 
+  function updateTable() {
+    const tbody = document.getElementById('table-body');
+    if (!mathModel && points.length < 2) {
+        tbody.innerHTML = `<tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    const dMin = parseFloat(domMinInput.value); const hasDMin = !isNaN(dMin);
+    const dMax = parseFloat(domMaxInput.value); const hasDMax = !isNaN(dMax);
+    
+    let model = mathModel;
+    if (funcType === 'linear' && !model && points.length === 2) {
+        const dx = points[1].x - points[0].x;
+        if(Math.abs(dx) > 1e-9) model = { type: 'linear', m: (points[1].y - points[0].y)/dx, b: points[0].y - ((points[1].y - points[0].y)/dx)*points[0].x };
+    }
+
+    if (!model) return;
+
+    for (let x = -3; x <= 3; x++) {
+        if (hasDMin && x < dMin) continue;
+        if (hasDMax && x > dMax) continue;
+
+        let y = 0;
+        if (model.type === 'linear') y = model.m * x + model.b;
+        else y = model.a * x * x + model.b * x + model.c;
+        tbody.innerHTML += `<tr><td>${x}</td><td>${y.toFixed(2).replace('.00','')}</td></tr>`;
+    }
+    if (tbody.innerHTML === '') tbody.innerHTML = `<tr><td colspan="2" style="color:var(--ink-soft)">Valores fora do domínio</td></tr>`;
+  }
+
   function updateEquation(){
+    updateTable();
     if(funcType === 'linear') {
         if(points.length < 2) { equationArea.innerHTML = `<div class="empty-state">Defina a equação ou dois pontos para calcular.</div>`; return; }
-        const [p1, p2] = points;
-        const dx = p2.x - p1.x; const dy = p2.y - p1.y;
-
-        if(Math.abs(dx) < 1e-9){
-            equationArea.innerHTML = `<div class="vertical-warning">Pontos formam uma reta <b>vertical</b> (x = ${p1.x}). Não é uma função afim.</div>`;
-            return;
-        }
-        const mFrac = fracLabel(dy, dx); 
-        const m = dy / dx;
-        const bNum = p1.y * dx - dy * p1.x; 
-        const bDen = dx;
-        const bFracExact = fracLabel(bNum, bDen); 
-        const bValue = bNum / bDen;
+        const dx = points[1].x - points[0].x; const dy = points[1].y - points[0].y;
+        if(Math.abs(dx) < 1e-9){ equationArea.innerHTML = `<div class="vertical-warning">Reta vertical. Não é função afim.</div>`; return; }
+        const mFrac = fracLabel(dy, dx); const m = dy / dx;
+        const bNum = points[0].y * dx - dy * points[0].x; const bDen = dx;
+        const bFracExact = fracLabel(bNum, bDen); const bValue = bNum / bDen;
 
         let eqStr = 'y = ';
         eqStr += (mFrac === '1') ? 'x' : (mFrac === '-1') ? '-x' : `${mFrac}x`;
         if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
 
         let rootHtml = '';
-        if (Math.abs(dy) > 1e-9) {
-            const rootExact = fracLabel(-bNum, dy);
-            rootHtml = `<div><b>Raiz (Intersecção eixo x):</b> (${rootExact}, 0)</div>`;
-        }
-
-        equationArea.innerHTML = `
-          <div class="equation-box">
-            <div class="eq">${eqStr}</div>
-            <div class="sub">m (inclinação) = ${mFrac} &nbsp;·&nbsp; b (intercepto) = ${bValue === 0 ? '0' : bFracExact}</div>
-          </div>
-          <div class="steps" style="margin-top:14px;">
-            <div><b>Intersecção eixo y:</b> (0, ${bValue === 0 ? '0' : bFracExact})</div>
-            ${rootHtml}
-          </div>`;
+        if (Math.abs(dy) > 1e-9) rootHtml = `<div><b>Raiz (Corte X):</b> (${fracLabel(-bNum, dy)}, 0)</div>`;
+        
+        equationArea.innerHTML = `<div class="equation-box"><div class="eq">${eqStr}</div><div class="sub">m = ${mFrac} &nbsp;·&nbsp; b = ${bValue === 0 ? '0' : bFracExact}</div></div><div class="steps" style="margin-top:14px;"><div><b>Intersecção Y:</b> (0, ${bValue === 0 ? '0' : bFracExact})</div>${rootHtml}</div>`;
     } 
     else if (funcType === 'quadratic') {
         if (!mathModel) { equationArea.innerHTML = `<div class="empty-state">Escreva a equação para calcular.</div>`; return; }
@@ -914,60 +862,44 @@
         let bStr = b === 0 ? '' : b === 1 ? ' + x' : b === -1 ? ' - x' : b > 0 ? ` + ${b}x` : ` - ${Math.abs(b)}x`;
         let cStr = c === 0 ? '' : c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`;
         
-        const delta = b*b - 4*a*c;
-        const xv = -b / (2*a);
-        const yv = -delta / (4*a);
-
+        const delta = b*b - 4*a*c; const xv = -b / (2*a); const yv = -delta / (4*a);
         let rootHtml = '';
-        if (delta > 0) {
-            const x1 = (-b + Math.sqrt(delta)) / (2*a);
-            const x2 = (-b - Math.sqrt(delta)) / (2*a);
-            rootHtml = `<div><b>Raízes (x₁, x₂):</b> ${x1.toFixed(2)} e ${x2.toFixed(2)}</div>`;
-        } else if (delta === 0) {
-            const x1 = -b / (2*a);
-            rootHtml = `<div><b>Raiz dupla (x):</b> ${x1.toFixed(2)}</div>`;
-        } else {
-            rootHtml = `<div><b>Raízes:</b> Não possui raízes reais (Δ < 0)</div>`;
-        }
+        if (delta > 0) rootHtml = `<div><b>Raízes (x₁, x₂):</b> ${((-b + Math.sqrt(delta)) / (2*a)).toFixed(2)} e ${((-b - Math.sqrt(delta)) / (2*a)).toFixed(2)}</div>`;
+        else if (delta === 0) rootHtml = `<div><b>Raiz dupla:</b> ${(-b / (2*a)).toFixed(2)}</div>`;
+        else rootHtml = `<div><b>Raízes:</b> Não possui (Δ < 0)</div>`;
 
-        equationArea.innerHTML = `
-          <div class="equation-box">
-            <div class="eq">y = ${aStr}${bStr}${cStr}</div>
-            <div class="sub">a = ${a}, b = ${b}, c = ${c}</div>
-          </div>
-          <div class="steps" style="margin-top:14px;">
-            <div><b>Vértice (xᵥ, yᵥ):</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div>
-            <div><b>Δ (Delta):</b> ${delta}</div>
-            ${rootHtml}
-            <div><b>Corte no eixo y (c):</b> (0, ${c})</div>
-          </div>`;
+        equationArea.innerHTML = `<div class="equation-box"><div class="eq">y = ${aStr}${bStr}${cStr}</div><div class="sub">a = ${a}, b = ${b}, c = ${c}</div></div><div class="steps" style="margin-top:14px;"><div><b>Vértice:</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div><div><b>Δ:</b> ${delta}</div>${rootHtml}<div><b>Corte Y:</b> (0, ${c})</div></div>`;
     }
   }
 
   function refresh(){ draw(); updateEquation(); }
 
-  let isDragging = false;
-  let lastMouseX = 0, lastMouseY = 0;
-  let hasMoved = false;
+  domMinInput.addEventListener('input', refresh);
+  domMaxInput.addEventListener('input', refresh);
 
-  // Uso da Pointer Events API
+  // MOUSE & POINTER API
+  let isDragging = false, lastMouseX = 0, lastMouseY = 0, hasMoved = false;
+
+  function updateEraserCursor(size) {
+    if (document.getElementById('tool-eraser').classList.contains('active') && currentMode === 'draw') {
+        const s = size * 1.6; 
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${(s/2)-1}" fill="none" stroke="black" stroke-width="1"/></svg>`;
+        container.style.cursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${s/2} ${s/2}, auto`;
+    } else if (currentMode === 'draw') {
+        container.style.cursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'/%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'/%3E%3Cpath d='M2 2l7.586 7.586'/%3E%3Ccircle cx='11' cy='11' r='2'/%3E%3C/svg%3E") 0 16, crosshair`;
+    } else {
+        container.style.cursor = currentMode === 'pan' ? 'grab' : 'crosshair';
+    }
+  }
+
   container.addEventListener('pointerdown', (e) => {
     isDragging = true; hasMoved = false;
     const rect = container.getBoundingClientRect();
-    lastMouseX = e.clientX - rect.left;
-    lastMouseY = e.clientY - rect.top;
-
+    lastMouseX = e.clientX - rect.left; lastMouseY = e.clientY - rect.top;
     if(currentMode === 'draw'){
-      let pressure = 0.5;
-      if (window.usePenPressure && e.pointerType === 'pen') {
-          pressure = e.pressure !== undefined ? e.pressure : 0.5;
-      }
-      let currentWidth = 4 * (pressure * 2);
-
-      drawCtx.beginPath();
-      drawCtx.arc(lastMouseX, lastMouseY, currentWidth / 2, 0, Math.PI * 2);
-      drawCtx.fillStyle = '#1A202C'; 
-      drawCtx.fill();
+      let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
+      drawCtx.beginPath(); drawCtx.arc(lastMouseX, lastMouseY, (4*(pressure*2))/2, 0, Math.PI * 2);
+      drawCtx.fillStyle = '#1A202C'; drawCtx.fill();
     }
   });
 
@@ -975,47 +907,22 @@
     if(!isDragging) return;
     hasMoved = true;
     const rect = container.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const dx = mx - lastMouseX;
-    const dy = my - lastMouseY;
-
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    
     if(currentMode === 'pan'){
-      originX += dx;
-      originY += dy;
-      mathCenterX = ((cssWidth / 2) - originX) / unitSize;
-      mathCenterY = (originY - (cssHeight / 2)) / unitSize;
-
-      const temp = document.createElement('canvas');
-      temp.width = drawLayer.width; temp.height = drawLayer.height;
-      temp.getContext('2d').drawImage(drawLayer, 0, 0);
-      drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-      drawCtx.drawImage(temp, dx * dpr, dy * dpr);
-
+      originX += mx - lastMouseX; originY += my - lastMouseY;
+      mathCenterX = ((cssWidth / 2) - originX) / unitSize; mathCenterY = (originY - (cssHeight / 2)) / unitSize;
+      const temp = document.createElement('canvas'); temp.width = drawLayer.width; temp.height = drawLayer.height;
+      temp.getContext('2d').drawImage(drawLayer, 0, 0); drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
+      drawCtx.drawImage(temp, (mx-lastMouseX)*dpr, (my-lastMouseY)*dpr);
       refresh();
     } else if(currentMode === 'draw'){
-      let pressure = 0.5;
-      if (window.usePenPressure && e.pointerType === 'pen') {
-          pressure = e.pressure !== undefined ? e.pressure : 0.5;
-      }
-      let currentWidth = 4 * (pressure * 2);
-
-      drawCtx.strokeStyle = '#1A202C'; 
-      drawCtx.fillStyle = '#1A202C';
-      drawCtx.lineWidth = currentWidth;
-      drawCtx.lineCap = 'round';
-      drawCtx.lineJoin = 'round';
-
-      drawCtx.beginPath(); 
-      drawCtx.moveTo(lastMouseX, lastMouseY); 
-      drawCtx.lineTo(mx, my); 
-      drawCtx.stroke();
-
-      drawCtx.beginPath(); 
-      drawCtx.arc(mx, my, currentWidth / 2, 0, Math.PI * 2); 
-      drawCtx.fill();
+      let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
+      let cw = 4*(pressure*2);
+      drawCtx.strokeStyle = '#1A202C'; drawCtx.fillStyle = '#1A202C'; drawCtx.lineWidth = cw; drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+      drawCtx.beginPath(); drawCtx.moveTo(lastMouseX, lastMouseY); drawCtx.lineTo(mx, my); drawCtx.stroke();
+      drawCtx.beginPath(); drawCtx.arc(mx, my, cw/2, 0, Math.PI * 2); drawCtx.fill();
     }
-
     lastMouseX = mx; lastMouseY = my;
   });
 
@@ -1025,12 +932,9 @@
       const sx = e.clientX - rect.left; const sy = e.clientY - rect.top;
       if (sx >= 0 && sx <= cssWidth && sy >= 0 && sy <= cssHeight) {
           const plane = toPlane(sx, sy);
-          const x = snap(plane.x); const y = snap(plane.y);
-          if(points.length >= 2) points.length = 0;
-          points.push({x, y});
-
-          updateInputsFromPoints();
-          refresh();
+          points.length >= 2 ? points.length = 0 : null;
+          points.push({x: snap(plane.x), y: snap(plane.y)});
+          updateInputsFromPoints(); refresh();
       }
     }
     isDragging = false;
@@ -1038,93 +942,52 @@
 
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const zoomFactor = Math.exp(-e.deltaY * 0.002);
-
-    const rect = container.getBoundingClientRect();
-    const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
+    const mx = e.clientX - container.getBoundingClientRect().left; const my = e.clientY - container.getBoundingClientRect().top;
     const planePos = toPlane(mx, my);
+    unitSize = Math.max(0.001, unitSize * Math.exp(-e.deltaY * 0.002)); 
+    originX = mx - planePos.x * unitSize; originY = my + planePos.y * unitSize;
+    mathCenterX = ((cssWidth / 2) - originX) / unitSize; mathCenterY = (originY - (cssHeight / 2)) / unitSize;
 
-    unitSize *= zoomFactor;
-    unitSize = Math.max(0.001, unitSize); 
-
-    originX = mx - planePos.x * unitSize;
-    originY = my + planePos.y * unitSize;
-    mathCenterX = ((cssWidth / 2) - originX) / unitSize;
-    mathCenterY = (originY - (cssHeight / 2)) / unitSize;
-
-    const temp = document.createElement('canvas');
-    temp.width = drawLayer.width; temp.height = drawLayer.height;
-    temp.getContext('2d').drawImage(drawLayer, 0, 0);
-    drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-
-    drawCtx.save();
-    drawCtx.translate(mx * dpr, my * dpr);
-    drawCtx.scale(zoomFactor, zoomFactor);
-    drawCtx.translate(-mx * dpr, -my * dpr);
-    drawCtx.drawImage(temp, 0, 0);
-    drawCtx.restore();
-
+    const temp = document.createElement('canvas'); temp.width = drawLayer.width; temp.height = drawLayer.height;
+    temp.getContext('2d').drawImage(drawLayer, 0, 0); drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
+    drawCtx.save(); drawCtx.translate(mx*dpr, my*dpr); drawCtx.scale(Math.exp(-e.deltaY * 0.002), Math.exp(-e.deltaY * 0.002)); drawCtx.translate(-mx*dpr, -my*dpr);
+    drawCtx.drawImage(temp, 0, 0); drawCtx.restore();
     refresh();
   }, { passive: false });
 
-  const modes = ['point', 'pan', 'draw'];
-  modes.forEach(m => {
-    document.getElementById(`mode-${m}`).addEventListener('click', (e) => {
-      modes.forEach(mode => document.getElementById(`mode-${mode}`).classList.remove('active'));
+  document.querySelectorAll('#mode-point, #mode-pan, #mode-draw').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#mode-point, #mode-pan, #mode-draw').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
-      currentMode = m;
-      container.className = `canvas-container mode-${m}`;
-      clearDrawBtn.style.display = m === 'draw' ? 'inline-block' : 'none';
+      currentMode = e.target.id.replace('mode-', '');
+      updateEraserCursor(4); // Call dummy to reset
     });
   });
 
   document.getElementById('apply-btn').addEventListener('click', () => {
-    const x1 = parseFloat(x1Input.value), y1 = parseFloat(y1Input.value);
-    const x2 = parseFloat(x2Input.value), y2 = parseFloat(y2Input.value);
     points.length = 0;
-    if(!isNaN(x1) && !isNaN(y1)) points.push({x: x1, y: y1});
-    if(!isNaN(x2) && !isNaN(y2)) points.push({x: x2, y: y2});
+    if(!isNaN(parseFloat(x1Input.value)) && !isNaN(parseFloat(y1Input.value))) points.push({x: parseFloat(x1Input.value), y: parseFloat(y1Input.value)});
+    if(!isNaN(parseFloat(x2Input.value)) && !isNaN(parseFloat(y2Input.value))) points.push({x: parseFloat(x2Input.value), y: parseFloat(y2Input.value)});
     refresh();
   });
-  document.getElementById('clear-btn').addEventListener('click', () => { points.length = 0; mathModel = null; refresh(); });
-  clearDrawBtn.addEventListener('click', () => drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height));
+  document.getElementById('clear-btn').addEventListener('click', () => { points.length = 0; mathModel = null; document.getElementById('eq-input').value=''; refresh(); });
 
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 })();
 </script>
 
-<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN -->
 <script>
+// QUADRO DE RASCUNHO LIVRE
 (function(){
-  const openBtn = document.getElementById('open-draw-btn');
   const drawer = document.getElementById('draw-drawer');
-  const closeBtn = document.getElementById('draw-close');
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
-  const wrap = canvas.parentElement;
-
-  let isOpen = false;
-
-  function openDrawer(){ 
-    isOpen = true; 
-    drawer.classList.add('open'); 
-    requestAnimationFrame(resizeCanvas); 
-  }
-
-  function closeDrawer(){ 
-    isOpen = false; 
-    drawer.classList.remove('open'); 
-  }
-
-  openBtn.addEventListener('click', openDrawer);
-  closeBtn.addEventListener('click', closeDrawer);
-
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
-  let history = []; let tool='pen'; let currentColor='#1A202C'; let currentSize=4; let drawing=false; let lastX=0, lastY=0;
+  let isOpen = false, history = [], tool = 'pen', currentColor = '#1A202C', currentSize = 4, drawing = false, lastX=0, lastY=0;
 
   function resizeCanvas(){
-    const rect = wrap.getBoundingClientRect(); if(rect.width===0) return;
+    const rect = canvas.parentElement.getBoundingClientRect(); if(rect.width===0) return;
     const prev = document.createElement('canvas'); prev.width = canvas.width; prev.height = canvas.height;
     if(canvas.width>0) prev.getContext('2d').drawImage(canvas, 0, 0);
     canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
@@ -1132,81 +995,54 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap='round'; ctx.lineJoin='round';
     if(prev.width>0) ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, rect.width, rect.height);
   }
+  
+  document.getElementById('open-draw-btn').addEventListener('click', () => { isOpen = true; drawer.classList.add('open'); requestAnimationFrame(resizeCanvas); });
+  document.getElementById('draw-close').addEventListener('click', () => { isOpen = false; drawer.classList.remove('open'); });
   window.addEventListener('resize', () => { if(isOpen) resizeCanvas(); });
 
   function pushHistory(){ history.push(canvas.toDataURL()); if(history.length>25) history.shift(); }
-
-  function getPos(e){ 
-    const rect = canvas.getBoundingClientRect(); 
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
+  function getPos(e){ const rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+  
+  function updateBrushCursor() {
+    if (tool === 'eraser') {
+      const s = currentSize * 1.6; 
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${(s/2)-1}" fill="none" stroke="black" stroke-width="1"/></svg>`;
+      canvas.style.cursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${s/2} ${s/2}, auto`;
+    } else canvas.style.cursor = 'crosshair';
   }
 
-  function startDraw(e){ 
+  canvas.addEventListener('pointerdown', (e) => { 
     if (e.pointerType !== 'mouse') e.preventDefault();
-    pushHistory(); drawing=true; 
-    const p=getPos(e); lastX=p.x; lastY=p.y; 
-
-    let pressure = 0.5;
-    if (window.usePenPressure && e.pointerType === 'pen') {
-        pressure = e.pressure !== undefined ? e.pressure : 0.5;
-    }
-
-    let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
-    let pWidth = baseSize * (pressure * 2);
-
+    pushHistory(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; 
+    let pWidth = (tool==='eraser'?currentSize*1.6:currentSize) * ((window.usePenPressure && e.pointerType==='pen'&&e.pressure)?e.pressure*2:1);
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-
-    ctx.beginPath(); 
-    ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); 
-    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor; 
-    ctx.fill(); 
-  }
-
-  function moveDraw(e){ 
-    if(!drawing) return; 
-    if (e.pointerType !== 'mouse') e.preventDefault(); 
+    ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fillStyle = tool==='eraser'?'#000':currentColor; ctx.fill(); 
+  });
+  
+  canvas.addEventListener('pointermove', (e) => { 
+    if(!drawing) return; if (e.pointerType !== 'mouse') e.preventDefault(); 
     const p=getPos(e); 
-
-    let pressure = 0.5;
-    if (window.usePenPressure && e.pointerType === 'pen') {
-        pressure = e.pressure !== undefined ? e.pressure : 0.5;
-    }
-
-    let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
-    let pWidth = baseSize * (pressure * 2);
-
+    let pWidth = (tool==='eraser'?currentSize*1.6:currentSize) * ((window.usePenPressure && e.pointerType==='pen'&&e.pressure)?e.pressure*2:1);
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.strokeStyle = tool === 'eraser' ? '#000' : currentColor; 
-    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor;
-    ctx.lineWidth = pWidth; 
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
+    ctx.strokeStyle = tool==='eraser'?'#000':currentColor; ctx.fillStyle = tool==='eraser'?'#000':currentColor;
+    ctx.lineWidth = pWidth; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
     ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fill();
-
     lastX=p.x; lastY=p.y; 
-  }
-
-  canvas.addEventListener('pointerdown', startDraw); 
-  canvas.addEventListener('pointermove', moveDraw); 
-  window.addEventListener('pointerup', ()=>drawing=false);
-  window.addEventListener('pointercancel', ()=>drawing=false);
+  });
+  window.addEventListener('pointerup', ()=>drawing=false); window.addEventListener('pointercancel', ()=>drawing=false);
 
   document.querySelectorAll('.swatch').forEach(sw => {
     sw.addEventListener('click', () => { 
-      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); 
-      sw.classList.add('active'); 
-      currentColor=sw.dataset.color; 
-      document.getElementById('custom-color').value=currentColor; 
-      tool='pen'; document.getElementById('tool-pen').classList.add('active'); 
-      document.getElementById('tool-eraser').classList.remove('active'); 
+      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); sw.classList.add('active'); 
+      currentColor=sw.dataset.color; document.getElementById('custom-color').value=currentColor; 
+      tool='pen'; document.getElementById('tool-pen').click();
     });
   });
-  document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; });
-  document.getElementById('brush-size').addEventListener('input', (e) => { currentSize=parseInt(e.target.value); document.getElementById('brush-size-label').textContent=currentSize+'px'; });
-  document.getElementById('tool-pen').addEventListener('click', (e) => { tool='pen'; e.target.classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); });
-  document.getElementById('tool-eraser').addEventListener('click', (e) => { tool='eraser'; e.target.classList.add('active'); document.getElementById('tool-pen').classList.remove('active'); });
+  document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; document.getElementById('tool-pen').click(); });
+  document.getElementById('brush-size').addEventListener('input', (e) => { currentSize=parseInt(e.target.value); document.getElementById('brush-size-label').textContent=currentSize+'px'; updateBrushCursor();});
+  
+  document.getElementById('tool-pen').addEventListener('click', (e) => { tool='pen'; e.target.classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); updateBrushCursor();});
+  document.getElementById('tool-eraser').addEventListener('click', (e) => { tool='eraser'; e.target.classList.add('active'); document.getElementById('tool-pen').classList.remove('active'); updateBrushCursor();});
 
   document.getElementById('draw-undo').addEventListener('click', () => {
     if(history.length===0) return; const img=new Image();
@@ -1214,11 +1050,6 @@
     img.src = history.pop();
   });
   document.getElementById('draw-clear').addEventListener('click', () => { pushHistory(); ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr); });
-  document.getElementById('draw-save').addEventListener('click', () => {
-    const out = document.createElement('canvas'); out.width=canvas.width; out.height=canvas.height;
-    const octx = out.getContext('2d'); octx.fillStyle='#ffffff'; octx.fillRect(0,0,out.width,out.height); octx.drawImage(canvas,0,0);
-    const link = document.createElement('a'); link.download='rascunho.png'; link.href=out.toDataURL('image/png'); link.click();
-  });
 })();
 </script>
 </body>
