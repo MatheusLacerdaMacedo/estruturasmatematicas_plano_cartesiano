@@ -274,8 +274,56 @@
     overflow-x: hidden;
   }
   .draw-drawer.open{ transform: translateY(0); }
-  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
+  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; gap: 18px; }
   .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
+  .draw-header-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .pdf-name-control{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:5px 8px 5px 10px;
+    border:1px solid var(--paper-line);
+    border-radius:var(--radius);
+    background:var(--blueprint-deep);
+  }
+
+  .pdf-name-control label{
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+
+  .pdf-name-control input{
+    width:min(240px, 30vw);
+    min-width:150px;
+    border:none;
+    outline:none;
+    background:transparent;
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+    padding:4px 2px;
+  }
+
+  .pdf-name-control:focus-within{
+    border-color:var(--pencil-dark);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--pencil-dark) 15%, transparent);
+  }
+
+  #export-scratch-pdf.pdf-working{
+    opacity: 0.7;
+    cursor: wait;
+    pointer-events: none;
+  }
   .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;}
   .tool-row{ display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
   .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: auto; flex-shrink: 0; }
@@ -445,7 +493,11 @@
   }
 
   @media (max-height: 760px), (max-width: 700px) {
-    .draw-header { padding: 12px 18px; }
+    .draw-header { padding: 12px 18px; align-items:flex-start; }
+    .draw-header-actions { gap: 6px; width:100%; justify-content:flex-start; }
+    .pdf-name-control { flex:1 1 220px; }
+    .pdf-name-control input { width:100%; min-width:0; }
+    .draw-header-actions button { padding: 8px 10px; font-size: 0.74rem; }
     .draw-toolbar { padding: 10px 18px; gap: 12px; }
     .draw-footer { padding: 10px 18px; }
     .draw-canvas-wrap { flex-basis: 5000px; min-height: 5000px; }
@@ -580,7 +632,22 @@
 <aside id="draw-drawer" class="draw-drawer" aria-hidden="true">
   <div class="draw-header">
     <h2>Quadro de Rascunho</h2>
-    <button id="draw-close" class="secondary">Fechar ✕</button>
+    <div class="draw-header-actions">
+      <div class="pdf-name-control">
+        <label for="scratch-pdf-name">Nome do PDF</label>
+        <input
+          id="scratch-pdf-name"
+          type="text"
+          value="rascunho-plano-cartesiano"
+          maxlength="80"
+          spellcheck="false"
+          autocomplete="off"
+          aria-label="Nome do arquivo PDF"
+        >
+      </div>
+      <button id="export-scratch-pdf" class="secondary">⇩ Exportar PDF</button>
+      <button id="draw-close" class="secondary">Fechar ✕</button>
+    </div>
   </div>
   <div class="draw-toolbar">
     <div class="tool-row">
@@ -1347,6 +1414,8 @@
 })();
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
 <script>
 // QUADRO DE RASCUNHO LIVRE
 (function(){
@@ -1363,6 +1432,8 @@
   const scratchPrintControls = document.getElementById('scratch-print-controls');
   const scratchPasteStatus = document.getElementById('scratch-paste-status');
   const removeAllScratchPrintsBtn = document.getElementById('remove-all-scratch-prints');
+  const exportScratchPdfBtn = document.getElementById('export-scratch-pdf');
+  const scratchPdfNameInput = document.getElementById('scratch-pdf-name');
 
   let placingScratchGraph = false;
   let scratchGraphCounter = 0;
@@ -1969,6 +2040,576 @@
     previousMidX = x;
     previousMidY = y;
   }
+
+  function sanitizePdfFileName(value){
+    let name = String(value || '')
+      .trim()
+      .replace(/\.pdf$/i, '')
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/[. ]+$/g, '')
+      .slice(0, 80);
+
+    if (!name) name = 'rascunho-plano-cartesiano';
+    return name + '.pdf';
+  }
+
+  function createScratchContentMask(width, height){
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    const maskCtx = maskCanvas.getContext('2d', { alpha: false });
+    maskCtx.fillStyle = '#000';
+    maskCtx.fillRect(0, 0, width, height);
+    maskCtx.fillStyle = '#FFF';
+    maskCtx.strokeStyle = '#FFF';
+
+    // Marca a área ocupada por gráficos.
+    scratchGraphs.forEach(graph => {
+      const wrapper = graph.wrapper;
+      const left = parseFloat(wrapper.style.left) || 0;
+      const top = parseFloat(wrapper.style.top) || 0;
+      const graphWidth = wrapper.offsetWidth || parseFloat(wrapper.style.width) || 340;
+      const graphHeight = wrapper.offsetHeight || parseFloat(wrapper.style.height) || Math.round(graphWidth * 0.70);
+
+      maskCtx.fillRect(
+        Math.max(0, left - 12),
+        Math.max(0, top - 12),
+        graphWidth + 24,
+        graphHeight + 24
+      );
+    });
+
+    // Marca toda a caixa de cada print, para nunca tentar cortá-lo no meio
+    // quando houver uma alternativa de quebra próxima.
+    scratchPrints.forEach(print => {
+      maskCtx.fillRect(
+        Math.max(0, print.left - 12),
+        Math.max(0, print.top - 12),
+        print.width + 24,
+        print.height + 24
+      );
+    });
+
+    // Marca apenas os pixels efetivamente desenhados no canvas.
+    // O canvas do rascunho é transparente onde não há desenho.
+    const sourceRawHeight = Math.min(
+      canvas.height,
+      Math.max(1, Math.ceil(height * dpr))
+    );
+
+    const sourceImage = ctx.getImageData(
+      0,
+      0,
+      canvas.width,
+      sourceRawHeight
+    );
+
+    // Amostra em blocos para reduzir custo. Se houver qualquer pixel
+    // suficientemente opaco no bloco, a linha é considerada ocupada.
+    const sampleStep = Math.max(1, Math.round(dpr * 2));
+    const scaleX = width / canvas.width;
+    const scaleY = height / sourceRawHeight;
+
+    maskCtx.save();
+    maskCtx.fillStyle = '#FFF';
+
+    for (let rawY = 0; rawY < sourceRawHeight; rawY += sampleStep) {
+      let rowHasInk = false;
+
+      for (let rawX = 0; rawX < canvas.width; rawX += sampleStep) {
+        const alpha = sourceImage.data[(rawY * canvas.width + rawX) * 4 + 3];
+
+        if (alpha > 18) {
+          rowHasInk = true;
+          break;
+        }
+      }
+
+      if (rowHasInk) {
+        const y = Math.floor(rawY * scaleY);
+        const h = Math.max(2, Math.ceil(sampleStep * scaleY) + 2);
+        maskCtx.fillRect(0, Math.max(0, y - 1), width, h);
+      }
+    }
+
+    maskCtx.restore();
+
+    return maskCanvas;
+  }
+
+  function getRowOccupancy(maskData, width, height){
+    const rows = new Float32Array(height);
+
+    // Não precisamos contar todos os pixels: uma amostragem horizontal
+    // já identifica bem se a linha atravessa desenho/print/gráfico.
+    const xStep = Math.max(1, Math.floor(width / 180));
+
+    for (let y = 0; y < height; y++) {
+      let occupied = 0;
+      let samples = 0;
+
+      for (let x = 0; x < width; x += xStep) {
+        const value = maskData[(y * width + x) * 4];
+        if (value > 128) occupied++;
+        samples++;
+      }
+
+      rows[y] = samples ? occupied / samples : 0;
+    }
+
+    return rows;
+  }
+
+  function findSmartPageBreaks(maskCanvas, nominalPageHeight){
+    const width = maskCanvas.width;
+    const height = maskCanvas.height;
+    const maskCtx = maskCanvas.getContext('2d');
+    const data = maskCtx.getImageData(0, 0, width, height).data;
+    const rowOccupancy = getRowOccupancy(data, width, height);
+
+    const breaks = [0];
+    const minimumPageHeight = Math.max(240, Math.floor(nominalPageHeight * 0.68));
+    const maximumPageHeight = Math.floor(nominalPageHeight * 1.16);
+    const searchRadius = Math.max(80, Math.floor(nominalPageHeight * 0.18));
+    const blankBand = 18;
+
+    let pageStart = 0;
+
+    while (pageStart + nominalPageHeight < height) {
+      const ideal = Math.min(height - 1, pageStart + nominalPageHeight);
+
+      const searchMin = Math.max(
+        pageStart + minimumPageHeight,
+        ideal - searchRadius
+      );
+
+      const searchMax = Math.min(
+        height - 1,
+        pageStart + maximumPageHeight,
+        ideal + searchRadius
+      );
+
+      let bestY = ideal;
+      let bestScore = Infinity;
+
+      for (let y = searchMin; y <= searchMax; y++) {
+        let bandScore = 0;
+        let count = 0;
+
+        const halfBand = Math.floor(blankBand / 2);
+
+        for (
+          let row = Math.max(0, y - halfBand);
+          row <= Math.min(height - 1, y + halfBand);
+          row++
+        ) {
+          bandScore += rowOccupancy[row];
+          count++;
+        }
+
+        const averageOccupancy = count ? bandScore / count : 1;
+        const distancePenalty =
+          Math.abs(y - ideal) / Math.max(1, searchRadius) * 0.12;
+
+        const score = averageOccupancy + distancePenalty;
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestY = y;
+        }
+      }
+
+      // Evita criar páginas excessivamente pequenas.
+      if (bestY - pageStart < minimumPageHeight) {
+        bestY = Math.min(height, pageStart + nominalPageHeight);
+      }
+
+      breaks.push(bestY);
+      pageStart = bestY;
+    }
+
+    if (breaks[breaks.length - 1] !== height) {
+      breaks.push(height);
+    }
+
+    return breaks;
+  }
+
+  function getScratchUsedHeight(){
+    const wrap = canvas.parentElement;
+    let usedHeight = Math.max(1, drawingUsedHeight || 1);
+
+    scratchGraphs.forEach(graph => {
+      const top = parseFloat(graph.wrapper.style.top) || 0;
+      const height = graph.wrapper.offsetHeight || parseFloat(graph.wrapper.style.height) || 0;
+      usedHeight = Math.max(usedHeight, top + height);
+    });
+
+    scratchPrints.forEach(print => {
+      usedHeight = Math.max(usedHeight, print.top + print.height);
+    });
+
+    // Mantém uma área confortável mesmo quando há pouco conteúdo.
+    usedHeight = Math.max(760, Math.ceil(usedHeight + 72));
+    return Math.min(wrap.clientHeight || scratchAreaHeight, usedHeight);
+  }
+
+  function drawPdfGrid(targetCtx, width, height){
+    targetCtx.save();
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fillRect(0, 0, width, height);
+
+    targetCtx.strokeStyle = '#EEF2F7';
+    targetCtx.lineWidth = 1;
+
+    const step = 24;
+    for (let x = 0; x <= width; x += step) {
+      targetCtx.beginPath();
+      targetCtx.moveTo(x + 0.5, 0);
+      targetCtx.lineTo(x + 0.5, height);
+      targetCtx.stroke();
+    }
+
+    for (let y = 0; y <= height; y += step) {
+      targetCtx.beginPath();
+      targetCtx.moveTo(0, y + 0.5);
+      targetCtx.lineTo(width, y + 0.5);
+      targetCtx.stroke();
+    }
+
+    targetCtx.restore();
+  }
+
+  function drawGraphForPdf(targetCtx, graph){
+    const wrapper = graph.wrapper;
+    const left = parseFloat(wrapper.style.left) || 0;
+    const top = parseFloat(wrapper.style.top) || 0;
+    const width = wrapper.offsetWidth || parseFloat(wrapper.style.width) || 340;
+    const height = wrapper.offsetHeight || parseFloat(wrapper.style.height) || Math.round(width * 0.70);
+
+    const cx = left + width / 2;
+    const cy = top + height / 2;
+
+    targetCtx.save();
+    targetCtx.strokeStyle = '#334155';
+    targetCtx.fillStyle = '#334155';
+    targetCtx.lineWidth = 1.7;
+    targetCtx.lineCap = 'round';
+    targetCtx.lineJoin = 'round';
+
+    // Eixo X
+    targetCtx.beginPath();
+    targetCtx.moveTo(left + 8, cy);
+    targetCtx.lineTo(left + width - 10, cy);
+    targetCtx.stroke();
+
+    targetCtx.beginPath();
+    targetCtx.moveTo(left + width - 10, cy);
+    targetCtx.lineTo(left + width - 18, cy - 5);
+    targetCtx.moveTo(left + width - 10, cy);
+    targetCtx.lineTo(left + width - 18, cy + 5);
+    targetCtx.stroke();
+
+    // Eixo Y
+    targetCtx.beginPath();
+    targetCtx.moveTo(cx, top + height - 8);
+    targetCtx.lineTo(cx, top + 10);
+    targetCtx.stroke();
+
+    targetCtx.beginPath();
+    targetCtx.moveTo(cx, top + 10);
+    targetCtx.lineTo(cx - 5, top + 18);
+    targetCtx.moveTo(cx, top + 10);
+    targetCtx.lineTo(cx + 5, top + 18);
+    targetCtx.stroke();
+
+    targetCtx.font = "600 13px 'IBM Plex Mono', monospace";
+    targetCtx.textBaseline = 'middle';
+
+    targetCtx.textAlign = 'right';
+    targetCtx.fillText('x', left + width - 12, cy - 13);
+
+    targetCtx.textAlign = 'left';
+    targetCtx.fillText('y', cx + 8, top + 14);
+
+    targetCtx.fillStyle = '#64748B';
+    targetCtx.font = "11px 'IBM Plex Mono', monospace";
+    targetCtx.fillText('0', cx + 6, cy + 10);
+
+    targetCtx.restore();
+  }
+
+  async function waitForScratchPrints(){
+    const pending = scratchPrints.map(async print => {
+      if (print.img.complete && print.img.naturalWidth > 0) return;
+
+      try {
+        if (typeof print.img.decode === 'function') {
+          await print.img.decode();
+          return;
+        }
+      } catch (_) {}
+
+      await new Promise(resolve => {
+        const done = () => resolve();
+        print.img.addEventListener('load', done, { once: true });
+        print.img.addEventListener('error', done, { once: true });
+      });
+    });
+
+    await Promise.all(pending);
+  }
+
+  async function buildScratchPdfCanvas(){
+    await waitForScratchPrints();
+
+    const wrap = canvas.parentElement;
+    const width = Math.max(1, wrap.clientWidth);
+    const height = getScratchUsedHeight();
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+
+    const exportCtx = exportCanvas.getContext('2d', { alpha: false });
+
+    // Papel branco + grade suave para ficar legível também se o site estiver em tema escuro.
+    drawPdfGrid(exportCtx, width, height);
+
+    // 1) Gráficos X/Y
+    scratchGraphs.forEach(graph => {
+      drawGraphForPdf(exportCtx, graph);
+    });
+
+    // 2) Prints
+    scratchPrints.forEach(print => {
+      if (!print.img.complete || print.img.naturalWidth <= 0) return;
+
+      exportCtx.save();
+      exportCtx.drawImage(
+        print.img,
+        print.left,
+        print.top,
+        print.width,
+        print.height
+      );
+
+      // Moldura discreta no PDF, sem os controles de mover/apagar.
+      exportCtx.strokeStyle = '#CBD5E1';
+      exportCtx.lineWidth = 1;
+      exportCtx.strokeRect(
+        print.left + 0.5,
+        print.top + 0.5,
+        Math.max(1, print.width - 1),
+        Math.max(1, print.height - 1)
+      );
+      exportCtx.restore();
+    });
+
+    // 3) Desenho livre por cima dos gráficos e prints
+    const rawHeight = Math.min(
+      canvas.height,
+      Math.max(1, Math.ceil(height * dpr))
+    );
+
+    exportCtx.drawImage(
+      canvas,
+      0, 0, canvas.width, rawHeight,
+      0, 0, width, height
+    );
+
+    return exportCanvas;
+  }
+
+  function formatPdfDate(date){
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  }
+
+  function addPdfPageChrome(pdf, pageNumber, totalPages, generatedAt){
+    const pageWidth = 210;
+    const pageHeight = 297;
+
+    // Faixa superior elegante
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(0, 0, pageWidth, 25, 'F');
+
+    pdf.setDrawColor(226, 232, 240);
+    pdf.setLineWidth(0.35);
+    pdf.line(14, 25, pageWidth - 14, 25);
+
+    // Pequeno detalhe de destaque
+    pdf.setFillColor(201, 127, 30);
+    pdf.roundedRect(14, 8, 3, 9, 1.2, 1.2, 'F');
+
+    pdf.setTextColor(30, 41, 59);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text('Rascunho de Estudo', 21, 12.2);
+
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.text('PLANO CARTESIANO - FUNCOES', 21, 17.1);
+
+    pdf.setFontSize(7.2);
+    pdf.text(`Exportado em ${formatPdfDate(generatedAt)}`, pageWidth - 14, 12.5, { align: 'right' });
+
+    // Rodapé
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFontSize(7.2);
+    pdf.text('Material de estudo - rascunho livre', 14, pageHeight - 7.2);
+    pdf.text(`Pagina ${pageNumber} de ${totalPages}`, pageWidth - 14, pageHeight - 7.2, { align: 'right' });
+  }
+
+  async function exportScratchToPdf(){
+    const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+
+    if (!jsPDFCtor) {
+      alert('Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.');
+      return;
+    }
+
+    const originalText = exportScratchPdfBtn.textContent;
+    exportScratchPdfBtn.classList.add('pdf-working');
+    exportScratchPdfBtn.textContent = 'Gerando PDF…';
+
+    try {
+      const sourceCanvas = await buildScratchPdfCanvas();
+
+      const pageWidthMm = 210;
+      const pageHeightMm = 297;
+      const marginX = 14;
+      const contentTopMm = 31;
+      const contentBottomMm = 18;
+      const contentWidthMm = pageWidthMm - marginX * 2;
+      const contentHeightMm = pageHeightMm - contentTopMm - contentBottomMm;
+
+      // Mantém a mesma escala em todas as páginas.
+      const mmPerPixel = contentWidthMm / sourceCanvas.width;
+      const nominalPixelsPerPage = Math.max(
+        1,
+        Math.floor(contentHeightMm / mmPerPixel)
+      );
+
+      // Cria um mapa apenas do conteúdo real do rascunho e procura áreas
+      // vazias próximas da quebra ideal, reduzindo cortes em desenhos.
+      const contentMask = createScratchContentMask(
+        sourceCanvas.width,
+        sourceCanvas.height
+      );
+
+      const pageBreaks = findSmartPageBreaks(
+        contentMask,
+        nominalPixelsPerPage
+      );
+
+      const totalPages = Math.max(1, pageBreaks.length - 1);
+
+      const pdf = new jsPDFCtor({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      pdf.setProperties({
+        title: 'Rascunho - Plano Cartesiano',
+        subject: 'Rascunho de estudo de funções',
+        creator: 'Plano Cartesiano - Estudo de Funções'
+      });
+
+      const generatedAt = new Date();
+
+      for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        if (pageIndex > 0) pdf.addPage('a4', 'portrait');
+
+        addPdfPageChrome(pdf, pageIndex + 1, totalPages, generatedAt);
+
+        const sourceY = pageBreaks[pageIndex];
+        const nextBreak = pageBreaks[pageIndex + 1];
+        const sliceHeight = Math.max(1, nextBreak - sourceY);
+
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = sourceCanvas.width;
+        pageCanvas.height = sliceHeight;
+
+        const pageCtx = pageCanvas.getContext('2d', { alpha: false });
+        pageCtx.fillStyle = '#FFFFFF';
+        pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+        pageCtx.drawImage(
+          sourceCanvas,
+          0, sourceY, sourceCanvas.width, sliceHeight,
+          0, 0, sourceCanvas.width, sliceHeight
+        );
+
+        const imageHeightMm = sliceHeight * mmPerPixel;
+
+        // Cartão do conteúdo
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.setLineWidth(0.35);
+        pdf.roundedRect(
+          marginX - 1.5,
+          contentTopMm - 1.5,
+          contentWidthMm + 3,
+          imageHeightMm + 3,
+          1.5,
+          1.5,
+          'FD'
+        );
+
+        const imageData = pageCanvas.toDataURL('image/jpeg', 0.92);
+
+        pdf.addImage(
+          imageData,
+          'JPEG',
+          marginX,
+          contentTopMm,
+          contentWidthMm,
+          imageHeightMm,
+          undefined,
+          'FAST'
+        );
+      }
+
+      const fileName = sanitizePdfFileName(
+        scratchPdfNameInput.value
+      );
+
+      // Atualiza o campo para mostrar exatamente como o nome será salvo,
+      // mas sem forçar a extensão durante a digitação.
+      scratchPdfNameInput.value = fileName.replace(/\.pdf$/i, '');
+
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      alert('Não foi possível gerar o PDF deste rascunho.');
+    } finally {
+      exportScratchPdfBtn.classList.remove('pdf-working');
+      exportScratchPdfBtn.textContent = originalText;
+    }
+  }
+
+  exportScratchPdfBtn.addEventListener('click', exportScratchToPdf);
+
+  scratchPdfNameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      exportScratchToPdf();
+    }
+  });
 
   function updateBrushCursor() {
     if (tool === 'eraser') {
