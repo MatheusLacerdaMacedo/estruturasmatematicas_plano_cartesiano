@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plano Cartesiano — Função Afim</title>
+<title>Plano Cartesiano — Estudo de Funções</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -23,6 +23,7 @@
     --p1: #3182CE;
     --p2: #E53E3E;
     --danger: #E53E3E;
+    --success: #38A169;
     --radius: 4px;
     font-size: 16px;
   }
@@ -39,7 +40,7 @@
     display: flex;
     flex-direction: column;
     
-    /* Previne seleção acidental de texto */
+    /* Previne seleção acidental de texto, o que faz o cursor sumir */
     -webkit-user-select: none;
     user-select: none;
   }
@@ -124,6 +125,7 @@
   
   .canvas-container.mode-pan { cursor: grab; }
   .canvas-container.mode-pan:active { cursor: grabbing; }
+  
   .canvas-container.mode-draw {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'/%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'/%3E%3Cpath d='M2 2l7.586 7.586'/%3E%3Ccircle cx='11' cy='11' r='2'/%3E%3C/svg%3E") 0 16, crosshair;
   }
@@ -163,7 +165,7 @@
   .interaction-tools {
     display: flex;
     gap: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
     background: var(--blueprint-deep);
     padding: 6px;
     border-radius: var(--radius);
@@ -308,7 +310,7 @@
   .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
   .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
   .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;}
-  
+
   .tool-row{ display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
   .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: auto; flex-shrink: 0; }
 
@@ -336,8 +338,8 @@
 <header>
   <div>
     <p class="eyebrow">Ferramenta de estudo</p>
-    <h1>Plano Cartesiano — Função Afim</h1>
-    <p>Marque pontos, arraste para explorar o plano infinito ou use o scroll para dar zoom.</p>
+    <h1>Plano Cartesiano — Funções</h1>
+    <p>Estude funções do 1º e 2º grau. Marque pontos, arraste o plano infinito e analise propriedades matemáticas.</p>
   </div>
   <button id="open-draw-btn">✎ Rascunho Livre</button>
 </header>
@@ -351,8 +353,17 @@
   </div>
 
   <div class="panel">
+    
+    <div class="block" id="function-type-section">
+      <h2>Tipo de Função</h2>
+      <div class="interaction-tools" style="margin-bottom: 0;">
+        <button class="func-toggle active" data-val="linear">1º Grau (Reta)</button>
+        <button class="func-toggle" data-val="quadratic">2º Grau (Parábola)</button>
+      </div>
+    </div>
+
     <div class="block">
-      <h2>Modo de Interação</h2>
+      <h2>Interação</h2>
       <div class="interaction-tools">
         <button id="mode-point" class="active">📍 Marcar</button>
         <button id="mode-pan">✋ Mover</button>
@@ -371,14 +382,14 @@
         <label for="eq-input" style="font-weight:700; font-size:1.1rem; color:var(--ink);">y = </label>
         <input type="text" id="eq-input" placeholder="ex: 2x - 3" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
-      <p class="hint" style="margin-top: 8px;">Escreva a equação no formato <b>mx + b</b> para gerar a reta e focar nela automaticamente.</p>
+      <p class="hint" style="margin-top: 8px;">Escreva a equação no formato <b id="hint-format">mx + b</b> para gerar o gráfico.</p>
       <div class="btn-row">
-        <button id="apply-eq-btn">Gerar Reta e Focar</button>
+        <button id="apply-eq-btn">Gerar Gráfico e Focar</button>
       </div>
     </div>
 
     <div class="block" id="points-section">
-      <h2>Pontos da Reta</h2>
+      <h2>Definir por Pontos</h2>
       <div class="point-row">
         <span class="point-dot p1"></span>
         <div class="coord-inputs">
@@ -399,14 +410,16 @@
       </div>
       <div class="btn-row">
         <button id="apply-btn">Aplicar coordenadas</button>
-        <button id="clear-btn" class="secondary">Limpar Pontos</button>
+        <button id="clear-btn" class="secondary">Limpar Gráfico</button>
         <button id="clear-plane-draw-btn" class="secondary" style="display:none;">Limpar Desenho</button>
       </div>
     </div>
 
     <div class="block">
-      <h2>Análise da reta</h2>
-      <div id="equation-area"></div>
+      <h2>Análise Matemática</h2>
+      <div id="equation-area">
+        <div class="empty-state">Defina a equação ou os pontos para gerar a análise.</div>
+      </div>
     </div>
   </div>
 </main>
@@ -423,9 +436,9 @@
       <button class="tool-btn active input-toggle" data-val="mouse">🖱 Mouse</button>
       <button class="tool-btn input-toggle" data-val="pen">🖊 Mesa (Pressão)</button>
     </div>
-    
+
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    
+
     <div class="tool-row">
       <span class="row-label">Cor</span>
       <button class="swatch active" style="background:#1A202C" data-color="#1A202C"></button>
@@ -437,7 +450,7 @@
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
-      <span class="row-label">Espessura Base</span>
+      <span class="row-label">Espessura</span>
       <input type="range" id="brush-size" min="1" max="30" value="4">
       <span class="brush-size-label" id="brush-size-label">4px</span>
     </div>
@@ -474,16 +487,16 @@
   });
 </script>
 
-<!-- SCRIPT DO PLANO CARTESIANO INFINITO -->
+<!-- SCRIPT DO PLANO CARTESIANO MATEMÁTICO -->
 <script>
 (function(){
   const container = document.getElementById('canvas-container');
   const canvas = document.getElementById('plane');
   const ctx = canvas.getContext('2d');
-  
+
   const drawLayer = document.getElementById('plane-draw');
   const drawCtx = drawLayer.getContext('2d');
-  
+
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let cssWidth = 0, cssHeight = 0;
 
@@ -495,6 +508,9 @@
 
   const points = []; 
   let currentMode = 'point'; 
+  
+  let funcType = 'linear'; // 'linear' ou 'quadratic'
+  let mathModel = null; // { type: 'quadratic', a, b, c }
 
   const x1Input = document.getElementById('x1');
   const y1Input = document.getElementById('y1');
@@ -505,26 +521,54 @@
   const eqInput = document.getElementById('eq-input');
   const applyEqBtn = document.getElementById('apply-eq-btn');
 
+  // Alternar Tipo de Função
+  document.querySelectorAll('.func-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.func-toggle').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        funcType = e.target.dataset.val;
+
+        if (funcType === 'linear') {
+            document.getElementById('points-section').style.display = 'block';
+            eqInput.placeholder = 'ex: 2x - 3';
+            document.getElementById('hint-format').innerText = 'mx + b';
+            document.getElementById('mode-point').style.display = 'block';
+        } else {
+            // Esconde os pontos para quadrática (para manter simples, usa-se a equação)
+            document.getElementById('points-section').style.display = 'none';
+            eqInput.placeholder = 'ex: x² - 4x + 4';
+            document.getElementById('hint-format').innerText = 'ax² + bx + c';
+            document.getElementById('mode-point').style.display = 'none';
+            if (currentMode === 'point') document.getElementById('mode-pan').click();
+        }
+        
+        mathModel = null;
+        points.length = 0;
+        updateInputsFromPoints();
+        refresh();
+    });
+  });
+
   function resizeCanvas(){
     const rect = container.getBoundingClientRect();
     cssWidth = rect.width;
     cssHeight = rect.height;
     dpr = Math.max(window.devicePixelRatio || 1, 1);
-    
+
     canvas.width = cssWidth * dpr;
     canvas.height = cssHeight * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    
+
     const prev = document.createElement('canvas');
     prev.width = drawLayer.width; prev.height = drawLayer.height;
     if(drawLayer.width > 0) prev.getContext('2d').drawImage(drawLayer, 0, 0);
-    
+
     drawLayer.width = cssWidth * dpr;
     drawLayer.height = cssHeight * dpr;
     drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
     if(prev.width > 0) drawCtx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, cssWidth, cssHeight);
-    
+
     if(originX === 0 && originY === 0) {
         originX = cssWidth / 2;
         originY = cssHeight / 2;
@@ -535,20 +579,8 @@
     draw();
   }
 
-  function toScreen(x, y){
-    return {
-      sx: originX + x * unitSize,
-      sy: originY - y * unitSize
-    };
-  }
-
-  function toPlane(sx, sy){
-    return {
-      x: (sx - originX) / unitSize,
-      y: (originY - sy) / unitSize
-    };
-  }
-
+  function toScreen(x, y){ return { sx: originX + x * unitSize, sy: originY - y * unitSize }; }
+  function toPlane(sx, sy){ return { x: (sx - originX) / unitSize, y: (originY - sy) / unitSize }; }
   function snap(v){ return Math.round(v * 2) / 2; }
   
   function gcd(a,b){
@@ -573,62 +605,103 @@
     y2Input.value = points[1] ? points[1].y : '';
   }
 
-  function parseAffine(eq) {
-    eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '');
+  // Analisador Avançado (Linear e Quadrática)
+  function parseEquation(eq, type) {
+    // Normalização bruta
+    eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '').replace(/²/g, '^2');
     if (eq === '') return null;
-    
-    if (!eq.includes('x')) {
-        let b = parseFloat(eq);
-        return isNaN(b) ? null : { m: 0, b: b };
+
+    if (type === 'linear') {
+        if (eq.includes('x^2')) return null;
+        if (!eq.includes('x')) {
+            let b = parseFloat(eq);
+            return isNaN(b) ? null : { type: 'linear', m: 0, b: b };
+        }
+        let parts = eq.replace(/-/g, '+-').split('+').filter(p => p !== '');
+        let m = 0, b = 0;
+        parts.forEach(p => {
+            if (p.includes('x')) {
+                let val = p.replace('x', '');
+                m = val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
+            } else b += parseFloat(p);
+        });
+        if (isNaN(m) || isNaN(b)) return null;
+        return { type: 'linear', m, b };
+    } 
+    else if (type === 'quadratic') {
+        if (!eq.includes('x^2')) return null;
+        let parts = eq.replace(/-/g, '+-').split('+').filter(p => p !== '');
+        let a = 0, b = 0, c = 0;
+        parts.forEach(p => {
+            if (p.includes('x^2')) {
+                let val = p.replace('x^2', '');
+                a += val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
+            } else if (p.includes('x')) {
+                let val = p.replace('x', '');
+                b += val === '' ? 1 : val === '-' ? -1 : parseFloat(val);
+            } else c += parseFloat(p);
+        });
+        if (isNaN(a) || isNaN(b) || isNaN(c) || a === 0) return null;
+        return { type: 'quadratic', a, b, c };
     }
-    
-    let parts = eq.split('x');
-    let mStr = parts[0];
-    let bStr = parts[1];
-    
-    let m = 1;
-    if (mStr === '-') m = -1;
-    else if (mStr !== '' && mStr !== '+') m = parseFloat(mStr);
-    
-    let b = 0;
-    if (bStr && bStr !== '') b = parseFloat(bStr);
-    
-    if (isNaN(m) || isNaN(b)) return null;
-    return { m, b };
   }
 
   applyEqBtn.addEventListener('click', () => {
     const val = eqInput.value;
     if(!val.trim()) return;
-    const parsed = parseAffine(val);
+    const parsed = parseEquation(val, funcType);
+    
     if(!parsed) {
-        alert("Equação inválida. Tente usar o formato mx + b (ex: 2x - 3).");
+        alert(`Equação inválida. Tente usar o formato correto para a função do ${funcType === 'linear' ? '1º' : '2º'} grau.`);
         return;
     }
-    
-    const { m, b } = parsed;
-    points.length = 0;
-    points.push({ x: 0, y: b });
-    
-    if (Math.abs(m) > 1e-9) {
-        if (Math.abs(b) < 1e-9) {
-            points.push({ x: 1, y: m });
-        } else {
-            points.push({ x: parseFloat((-b / m).toPrecision(10)), y: 0 }); 
-        }
+
+    let focusPts = [];
+
+    if (funcType === 'linear') {
+        mathModel = null; // Linear é desenhada via array 'points'
+        points.length = 0;
+        points.push({ x: 0, y: parsed.b });
+        
+        if (Math.abs(parsed.m) > 1e-9) {
+            if (Math.abs(parsed.b) < 1e-9) points.push({ x: 1, y: parsed.m });
+            else points.push({ x: parseFloat((-parsed.b / parsed.m).toPrecision(10)), y: 0 }); 
+        } else points.push({ x: 1, y: parsed.b });
+        
+        updateInputsFromPoints();
+        focusPts = points;
     } else {
-        points.push({ x: 1, y: b });
+        mathModel = parsed;
+        points.length = 0; // Limpa os pontos, pois a quadrática usa mathModel
+        
+        focusPts.push({ x: 0, y: parsed.c }); // Intersecção com Y
+        const xv = -parsed.b / (2 * parsed.a);
+        const yv = -(parsed.b * Math.pow(xv, 2) + parsed.b * xv + parsed.c); // Evita falha do delta
+        focusPts.push({ x: xv, y: yv }); // Vértice
+        
+        const delta = parsed.b * parsed.b - 4 * parsed.a * parsed.c;
+        if (delta >= 0) {
+            focusPts.push({ x: (-parsed.b + Math.sqrt(delta)) / (2 * parsed.a), y: 0 });
+            focusPts.push({ x: (-parsed.b - Math.sqrt(delta)) / (2 * parsed.a), y: 0 });
+        }
     }
+
+    // AUTO-ZOOM ENQUADRAMENTO
+    let pMinX = focusPts[0].x, pMaxX = focusPts[0].x;
+    let pMinY = focusPts[0].y, pMaxY = focusPts[0].y;
     
-    updateInputsFromPoints();
-    
-    const marginX = Math.abs(points[1].x - points[0].x) * 0.3 + 2;
-    const marginY = Math.abs(points[1].y - points[0].y) * 0.3 + 2;
-    
-    let pMinX = Math.min(points[0].x, points[1].x) - marginX;
-    let pMaxX = Math.max(points[0].x, points[1].x) + marginX;
-    let pMinY = Math.min(points[0].y, points[1].y) - marginY;
-    let pMaxY = Math.max(points[0].y, points[1].y) + marginY;
+    focusPts.forEach(p => {
+        if(p.x < pMinX) pMinX = p.x;
+        if(p.x > pMaxX) pMaxX = p.x;
+        if(p.y < pMinY) pMinY = p.y;
+        if(p.y > pMaxY) pMaxY = p.y;
+    });
+
+    const marginX = Math.abs(pMaxX - pMinX) * 0.3 + 2;
+    const marginY = Math.abs(pMaxY - pMinY) * 0.3 + 2;
+
+    pMinX -= marginX; pMaxX += marginX;
+    pMinY -= marginY; pMaxY += marginY;
 
     let rangeX = pMaxX - pMinX;
     let rangeY = pMaxY - pMinY;
@@ -641,7 +714,7 @@
 
     unitSize = Math.min(scaleX, scaleY);
     unitSize = Math.max(0.001, unitSize); 
-    
+
     const cx = (pMinX + pMaxX) / 2;
     const cy = (pMinY + pMaxY) / 2;
 
@@ -649,7 +722,7 @@
     originY = (cssHeight / 2) + cy * unitSize;
     mathCenterX = cx;
     mathCenterY = cy;
-    
+
     drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
     refresh();
   });
@@ -668,16 +741,29 @@
       return 5 * mag;
   }
 
+  function drawPOI(x, y, color, label){
+      const pt = toScreen(x, y);
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(pt.sx, pt.sy, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#2C3E50'; ctx.font = `600 11px 'IBM Plex Mono', monospace`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.fillText(`${label}(${x.toFixed(1).replace('.0','').replace('.',',')}, ${y.toFixed(1).replace('.0','').replace('.',',')})`, pt.sx + 9, pt.sy - 7);
+  }
+
   function draw(){
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
     const step = getGridStep(unitSize);
+    const screenMinX = (-originX / unitSize);
+    const screenMaxX = ((cssWidth - originX) / unitSize);
 
-    const minX = Math.floor((-originX / unitSize) / step) * step;
-    const maxX = Math.ceil(((cssWidth - originX) / unitSize) / step) * step;
+    const minX = Math.floor(screenMinX / step) * step;
+    const maxX = Math.ceil(screenMaxX / step) * step;
     const minY = Math.floor(((originY - cssHeight) / unitSize) / step) * step;
     const maxY = Math.ceil((originY / unitSize) / step) * step;
 
+    // Grid e Eixos
     ctx.lineWidth = 1;
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
@@ -702,40 +788,62 @@
       ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, cssHeight); ctx.stroke();
     }
 
+    // Labels de Grid
     ctx.fillStyle = '#718096';
     ctx.font = `11px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for(let x = minX; x <= maxX; x += step){
       const xVal = parseFloat(x.toPrecision(10));
-      if(Math.abs(xVal) < 1e-9) continue;
-      if(Math.abs(xVal % (step * 2)) > 1e-9) continue;
-      
-      const sx = originX + xVal * unitSize;
-      const sy = Math.max(5, Math.min(originY + 5, cssHeight - 20));
-      ctx.fillText(xVal, sx, sy);
+      if(Math.abs(xVal) < 1e-9 || Math.abs(xVal % (step * 2)) > 1e-9) continue;
+      ctx.fillText(xVal, originX + xVal * unitSize, Math.max(5, Math.min(originY + 5, cssHeight - 20)));
     }
     
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for(let y = minY; y <= maxY; y += step){
       const yVal = parseFloat(y.toPrecision(10));
-      if(Math.abs(yVal) < 1e-9) continue;
-      if(Math.abs(yVal % (step * 2)) > 1e-9) continue;
-
-      const sy = originY - yVal * unitSize;
-      const sx = Math.max(20, Math.min(originX - 6, cssWidth - 5));
-      ctx.fillText(yVal, sx, sy);
+      if(Math.abs(yVal) < 1e-9 || Math.abs(yVal % (step * 2)) > 1e-9) continue;
+      ctx.fillText(yVal, Math.max(20, Math.min(originX - 6, cssWidth - 5)), originY - yVal * unitSize);
     }
     
     ctx.textAlign = 'left'; ctx.fillStyle = '#2C3E50';
     ctx.font = `600 ${Math.max(11, Math.min(16, unitSize*0.32))}px 'Space Grotesk', sans-serif`;
     ctx.fillText('0', originX + 6, originY + 6);
 
-    if(points.length === 2){
+    // FUNÇÃO QUADRÁTICA
+    if (funcType === 'quadratic' && mathModel && mathModel.type === 'quadratic') {
+        const { a, b, c } = mathModel;
+        ctx.strokeStyle = '#E8A33D'; 
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        
+        const qStep = (screenMaxX - screenMinX) / 200; // Desenha 200 segmentos p/ ficar suave
+        for(let x = screenMinX; x <= screenMaxX; x += qStep){
+            const y = a*x*x + b*x + c;
+            const pt = toScreen(x, y);
+            if(x === screenMinX) ctx.moveTo(pt.sx, pt.sy);
+            else ctx.lineTo(pt.sx, pt.sy);
+        }
+        ctx.stroke();
+
+        // Pontos Notáveis
+        drawPOI(0, c, '#3182CE', 'C'); // Corte Y
+        const xv = -b / (2 * a);
+        const yv = -(b*b - 4*a*c) / (4 * a);
+        drawPOI(xv, yv, '#E53E3E', 'V'); // Vértice
+
+        const delta = b*b - 4*a*c;
+        if (delta >= 0) {
+            const x1 = (-b + Math.sqrt(delta)) / (2 * a);
+            const x2 = (-b - Math.sqrt(delta)) / (2 * a);
+            drawPOI(x1, 0, '#38A169', 'R1');
+            if (delta > 0 && Math.abs(x1 - x2) > 1e-9) drawPOI(x2, 0, '#38A169', 'R2');
+        }
+    }
+    
+    // FUNÇÃO LINEAR
+    if (funcType === 'linear' && points.length === 2) {
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
-
-      const screenMinX = (-originX / unitSize);
-      const screenMaxX = ((cssWidth - originX) / unitSize);
 
       if(Math.abs(dx) > 1e-9){
         const m = dy / dx; const b = p1.y - m * p1.x;
@@ -754,63 +862,86 @@
         ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4;
         ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
       }
-    }
 
-    points.forEach((p, idx) => {
-      const s = toScreen(p.x, p.y);
-      ctx.fillStyle = idx === 0 ? '#3182CE' : '#E53E3E';
-      ctx.beginPath(); ctx.arc(s.sx, s.sy, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = '#2C3E50'; ctx.font = `600 11px 'IBM Plex Mono', monospace`;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-      ctx.fillText(`P${idx+1}(${p.x}, ${p.y})`, s.sx + 9, s.sy - 7);
-    });
+      points.forEach((p, idx) => {
+        drawPOI(p.x, p.y, idx === 0 ? '#3182CE' : '#E53E3E', `P${idx+1}`);
+      });
+    }
   }
 
   function updateEquation(){
-    if(points.length < 2){ equationArea.innerHTML = `<div class="empty-state">Defina a equação ou dois pontos para calcular.</div>`; return; }
-    const [p1, p2] = points;
-    const dx = p2.x - p1.x; const dy = p2.y - p1.y;
+    if(funcType === 'linear') {
+        if(points.length < 2) { equationArea.innerHTML = `<div class="empty-state">Defina a equação ou dois pontos para calcular.</div>`; return; }
+        const [p1, p2] = points;
+        const dx = p2.x - p1.x; const dy = p2.y - p1.y;
 
-    if(Math.abs(dx) < 1e-9){
-      equationArea.innerHTML = `<div class="vertical-warning">Pontos formam uma reta <b>vertical</b> (x = ${p1.x}). Não é uma função afim.</div>`;
-      return;
-    }
-    const mFrac = fracLabel(dy, dx); 
-    const m = dy / dx;
-    const bNum = p1.y * dx - dy * p1.x; 
-    const bDen = dx;
-    const bFracExact = fracLabel(bNum, bDen); 
-    const bValue = bNum / bDen;
-
-    let eqStr = 'y = ';
-    eqStr += (mFrac === '1') ? 'x' : (mFrac === '-1') ? '-x' : `${mFrac}x`;
-    if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
-
-    let rootHtml = '';
-    if (Math.abs(dy) > 1e-9) {
-        const rootExact = fracLabel(-bNum, dy);
-        const rootVal = -bNum / dy;
-        const formatedVal = rootVal.toFixed(2).replace('.00', '');
-        rootHtml = `<div><b>Raiz da função (y = 0):</b> x = ${rootExact} ${rootExact !== formatedVal ? `(${formatedVal})` : ''}</div>`;
-    } else {
-        if (Math.abs(bNum) < 1e-9) {
-            rootHtml = `<div><b>Raiz da função:</b> Infinitas raízes (reta coincidente ao eixo x)</div>`;
-        } else {
-            rootHtml = `<div><b>Raiz da função:</b> Não possui raiz (reta paralela ao eixo x)</div>`;
+        if(Math.abs(dx) < 1e-9){
+            equationArea.innerHTML = `<div class="vertical-warning">Pontos formam uma reta <b>vertical</b> (x = ${p1.x}). Não é uma função afim.</div>`;
+            return;
         }
-    }
+        const mFrac = fracLabel(dy, dx); 
+        const m = dy / dx;
+        const bNum = p1.y * dx - dy * p1.x; 
+        const bDen = dx;
+        const bFracExact = fracLabel(bNum, bDen); 
+        const bValue = bNum / bDen;
 
-    equationArea.innerHTML = `
-      <div class="equation-box">
-        <div class="eq">${eqStr}</div>
-        <div class="sub">m (inclinação) = ${mFrac} &nbsp;·&nbsp; b (intercepto) = ${bValue === 0 ? '0' : bFracExact}</div>
-      </div>
-      <div class="steps" style="margin-top:14px;">
-        <div><b>m</b> = (${p2.y} − ${p1.y}) / (${p2.x} − ${p1.x}) = ${mFrac}</div>
-        <div><b>b</b> = ${p1.y} − (${mFrac})·(${p1.x}) = ${bValue === 0 ? '0' : bFracExact}</div>
-        ${rootHtml}
-      </div>`;
+        let eqStr = 'y = ';
+        eqStr += (mFrac === '1') ? 'x' : (mFrac === '-1') ? '-x' : `${mFrac}x`;
+        if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
+
+        let rootHtml = '';
+        if (Math.abs(dy) > 1e-9) {
+            const rootExact = fracLabel(-bNum, dy);
+            rootHtml = `<div><b>Raiz (Intersecção eixo x):</b> (${rootExact}, 0)</div>`;
+        }
+
+        equationArea.innerHTML = `
+          <div class="equation-box">
+            <div class="eq">${eqStr}</div>
+            <div class="sub">m (inclinação) = ${mFrac} &nbsp;·&nbsp; b (intercepto) = ${bValue === 0 ? '0' : bFracExact}</div>
+          </div>
+          <div class="steps" style="margin-top:14px;">
+            <div><b>Intersecção eixo y:</b> (0, ${bValue === 0 ? '0' : bFracExact})</div>
+            ${rootHtml}
+          </div>`;
+    } 
+    else if (funcType === 'quadratic') {
+        if (!mathModel) { equationArea.innerHTML = `<div class="empty-state">Escreva a equação para calcular.</div>`; return; }
+        const { a, b, c } = mathModel;
+        
+        let aStr = a === 1 ? 'x²' : a === -1 ? '-x²' : `${a}x²`;
+        let bStr = b === 0 ? '' : b === 1 ? ' + x' : b === -1 ? ' - x' : b > 0 ? ` + ${b}x` : ` - ${Math.abs(b)}x`;
+        let cStr = c === 0 ? '' : c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`;
+        
+        const delta = b*b - 4*a*c;
+        const xv = -b / (2*a);
+        const yv = -delta / (4*a);
+
+        let rootHtml = '';
+        if (delta > 0) {
+            const x1 = (-b + Math.sqrt(delta)) / (2*a);
+            const x2 = (-b - Math.sqrt(delta)) / (2*a);
+            rootHtml = `<div><b>Raízes (x₁, x₂):</b> ${x1.toFixed(2)} e ${x2.toFixed(2)}</div>`;
+        } else if (delta === 0) {
+            const x1 = -b / (2*a);
+            rootHtml = `<div><b>Raiz dupla (x):</b> ${x1.toFixed(2)}</div>`;
+        } else {
+            rootHtml = `<div><b>Raízes:</b> Não possui raízes reais (Δ < 0)</div>`;
+        }
+
+        equationArea.innerHTML = `
+          <div class="equation-box">
+            <div class="eq">y = ${aStr}${bStr}${cStr}</div>
+            <div class="sub">a = ${a}, b = ${b}, c = ${c}</div>
+          </div>
+          <div class="steps" style="margin-top:14px;">
+            <div><b>Vértice (xᵥ, yᵥ):</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div>
+            <div><b>Δ (Delta):</b> ${delta}</div>
+            ${rootHtml}
+            <div><b>Corte no eixo y (c):</b> (0, ${c})</div>
+          </div>`;
+    }
   }
 
   function refresh(){ draw(); updateEquation(); }
@@ -819,7 +950,7 @@
   let lastMouseX = 0, lastMouseY = 0;
   let hasMoved = false;
 
-  // Uso da Pointer Events API (substitui mousedown)
+  // Uso da Pointer Events API
   container.addEventListener('pointerdown', (e) => {
     isDragging = true; hasMoved = false;
     const rect = container.getBoundingClientRect();
@@ -840,7 +971,6 @@
     }
   });
 
-  // Substitui mousemove
   window.addEventListener('pointermove', (e) => {
     if(!isDragging) return;
     hasMoved = true;
@@ -855,13 +985,13 @@
       originY += dy;
       mathCenterX = ((cssWidth / 2) - originX) / unitSize;
       mathCenterY = (originY - (cssHeight / 2)) / unitSize;
-      
+
       const temp = document.createElement('canvas');
       temp.width = drawLayer.width; temp.height = drawLayer.height;
       temp.getContext('2d').drawImage(drawLayer, 0, 0);
       drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
       drawCtx.drawImage(temp, dx * dpr, dy * dpr);
-      
+
       refresh();
     } else if(currentMode === 'draw'){
       let pressure = 0.5;
@@ -880,19 +1010,17 @@
       drawCtx.moveTo(lastMouseX, lastMouseY); 
       drawCtx.lineTo(mx, my); 
       drawCtx.stroke();
-      
-      // Suaviza as quebras devido à mudança de espessura
+
       drawCtx.beginPath(); 
       drawCtx.arc(mx, my, currentWidth / 2, 0, Math.PI * 2); 
       drawCtx.fill();
     }
-    
+
     lastMouseX = mx; lastMouseY = my;
   });
 
-  // Substitui mouseup
   window.addEventListener('pointerup', (e) => {
-    if(isDragging && currentMode === 'point' && !hasMoved){
+    if(isDragging && currentMode === 'point' && funcType === 'linear' && !hasMoved){
       const rect = container.getBoundingClientRect();
       const sx = e.clientX - rect.left; const sy = e.clientY - rect.top;
       if (sx >= 0 && sx <= cssWidth && sy >= 0 && sy <= cssHeight) {
@@ -900,7 +1028,7 @@
           const x = snap(plane.x); const y = snap(plane.y);
           if(points.length >= 2) points.length = 0;
           points.push({x, y});
-          
+
           updateInputsFromPoints();
           refresh();
       }
@@ -911,14 +1039,14 @@
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoomFactor = Math.exp(-e.deltaY * 0.002);
-    
+
     const rect = container.getBoundingClientRect();
     const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
     const planePos = toPlane(mx, my);
-    
+
     unitSize *= zoomFactor;
     unitSize = Math.max(0.001, unitSize); 
-    
+
     originX = mx - planePos.x * unitSize;
     originY = my + planePos.y * unitSize;
     mathCenterX = ((cssWidth / 2) - originX) / unitSize;
@@ -928,7 +1056,7 @@
     temp.width = drawLayer.width; temp.height = drawLayer.height;
     temp.getContext('2d').drawImage(drawLayer, 0, 0);
     drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-    
+
     drawCtx.save();
     drawCtx.translate(mx * dpr, my * dpr);
     drawCtx.scale(zoomFactor, zoomFactor);
@@ -958,7 +1086,7 @@
     if(!isNaN(x2) && !isNaN(y2)) points.push({x: x2, y: y2});
     refresh();
   });
-  document.getElementById('clear-btn').addEventListener('click', () => { points.length = 0; refresh(); });
+  document.getElementById('clear-btn').addEventListener('click', () => { points.length = 0; mathModel = null; refresh(); });
   clearDrawBtn.addEventListener('click', () => drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height));
 
   window.addEventListener('resize', resizeCanvas);
@@ -966,7 +1094,7 @@
 })();
 </script>
 
-<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN (COM SUPORTE À MESA) -->
+<!-- SCRIPT DO PAINEL DE RASCUNHO FULLSCREEN -->
 <script>
 (function(){
   const openBtn = document.getElementById('open-draw-btn');
@@ -977,18 +1105,18 @@
   const wrap = canvas.parentElement;
 
   let isOpen = false;
-  
+
   function openDrawer(){ 
     isOpen = true; 
     drawer.classList.add('open'); 
     requestAnimationFrame(resizeCanvas); 
   }
-  
+
   function closeDrawer(){ 
     isOpen = false; 
     drawer.classList.remove('open'); 
   }
-  
+
   openBtn.addEventListener('click', openDrawer);
   closeBtn.addEventListener('click', closeDrawer);
 
@@ -1007,38 +1135,38 @@
   window.addEventListener('resize', () => { if(isOpen) resizeCanvas(); });
 
   function pushHistory(){ history.push(canvas.toDataURL()); if(history.length>25) history.shift(); }
-  
+
   function getPos(e){ 
     const rect = canvas.getBoundingClientRect(); 
     return { x: e.clientX - rect.left, y: e.clientY - rect.top }; 
   }
-  
+
   function startDraw(e){ 
     if (e.pointerType !== 'mouse') e.preventDefault();
     pushHistory(); drawing=true; 
     const p=getPos(e); lastX=p.x; lastY=p.y; 
-    
+
     let pressure = 0.5;
     if (window.usePenPressure && e.pointerType === 'pen') {
         pressure = e.pressure !== undefined ? e.pressure : 0.5;
     }
-    
+
     let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
     let pWidth = baseSize * (pressure * 2);
 
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-    
+
     ctx.beginPath(); 
     ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); 
     ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor; 
     ctx.fill(); 
   }
-  
+
   function moveDraw(e){ 
     if(!drawing) return; 
     if (e.pointerType !== 'mouse') e.preventDefault(); 
     const p=getPos(e); 
-    
+
     let pressure = 0.5;
     if (window.usePenPressure && e.pointerType === 'pen') {
         pressure = e.pressure !== undefined ? e.pressure : 0.5;
@@ -1046,21 +1174,20 @@
 
     let baseSize = tool === 'eraser' ? currentSize * 1.6 : currentSize;
     let pWidth = baseSize * (pressure * 2);
-    
+
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
     ctx.strokeStyle = tool === 'eraser' ? '#000' : currentColor; 
     ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor;
     ctx.lineWidth = pWidth; 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
+
     ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
     ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fill();
 
     lastX=p.x; lastY=p.y; 
   }
-  
-  // Utilizando Pointer Events na lousa de rascunho
+
   canvas.addEventListener('pointerdown', startDraw); 
   canvas.addEventListener('pointermove', moveDraw); 
   window.addEventListener('pointerup', ()=>drawing=false);
