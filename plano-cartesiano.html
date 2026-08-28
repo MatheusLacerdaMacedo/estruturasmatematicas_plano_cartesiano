@@ -380,6 +380,14 @@
           <label>y₂</label><input type="number" id="y2" step="0.5">
         </div>
       </div>
+      <div class="point-row" id="point-row-3" style="display:none;">
+        <span class="point-dot" style="background:#38A169;"></span>
+        <div class="coord-inputs">
+          <label>x₃</label><input type="number" id="x3" step="0.5">
+          <label>y₃</label><input type="number" id="y3" step="0.5">
+        </div>
+      </div>
+      <p class="hint" id="points-hint">Marque dois pontos no plano ou informe as coordenadas.</p>
       <div class="btn-row">
         <button id="apply-btn">Aplicar coordenadas</button>
         <button id="clear-btn" class="secondary">Limpar Gráfico</button>
@@ -508,6 +516,8 @@
   const y1Input = document.getElementById('y1');
   const x2Input = document.getElementById('x2');
   const y2Input = document.getElementById('y2');
+  const x3Input = document.getElementById('x3');
+  const y3Input = document.getElementById('y3');
 
   // Controle de Funções UI
   document.querySelectorAll('.func-toggle').forEach(btn => {
@@ -516,17 +526,19 @@
         e.target.classList.add('active');
         funcType = e.target.dataset.val;
 
+        document.getElementById('points-section').style.display = 'block';
+        document.getElementById('mode-point').style.display = 'block';
+
         if (funcType === 'linear') {
-            document.getElementById('points-section').style.display = 'block';
+            document.getElementById('point-row-3').style.display = 'none';
+            document.getElementById('points-hint').innerText = 'Marque dois pontos no plano ou informe as coordenadas.';
             document.getElementById('eq-input').placeholder = 'ex: 2x - 3 ou 1/2x + 1';
             document.getElementById('hint-format').innerText = 'mx + b';
-            document.getElementById('mode-point').style.display = 'block';
         } else {
-            document.getElementById('points-section').style.display = 'none';
+            document.getElementById('point-row-3').style.display = 'flex';
+            document.getElementById('points-hint').innerText = 'Marque três pontos com valores de X diferentes para formar a parábola.';
             document.getElementById('eq-input').placeholder = 'ex: x² - 4x + 4 ou -x^2+9';
             document.getElementById('hint-format').innerText = 'ax² + bx + c';
-            document.getElementById('mode-point').style.display = 'none';
-            if (currentMode === 'point') document.getElementById('mode-pan').click();
         }
         mathModel = null; points.length = 0;
         eqError.style.display = 'none';
@@ -754,6 +766,16 @@
     const plotMinX = hasDMin ? Math.max(screenMinX, dMin) : screenMinX;
     const plotMaxX = hasDMax ? Math.min(screenMaxX, dMax) : screenMaxX;
 
+    // Pontos escolhidos pelo usuário no modo quadrático.
+    if (funcType === 'quadratic' && points.length > 0) {
+      const pointColors = ['#3182CE', '#E53E3E', '#38A169'];
+      points.forEach((p, idx) => {
+        if ((!hasDMin || p.x >= dMin) && (!hasDMax || p.x <= dMax)) {
+          drawPOI(p.x, p.y, pointColors[idx] || '#3182CE', `P${idx + 1}`);
+        }
+      });
+    }
+
     // DESENHO QUADRÁTICO
     if (funcType === 'quadratic' && mathModel && mathModel.type === 'quadratic') {
         const { a, b, c } = mathModel;
@@ -826,7 +848,8 @@
 
   function updateTable() {
     const tbody = document.getElementById('table-body');
-    if (!mathModel && points.length < 2) {
+    const requiredPoints = funcType === 'quadratic' ? 3 : 2;
+    if (!mathModel && points.length < requiredPoints) {
         tbody.innerHTML = `<tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>`;
         return;
     }
@@ -892,6 +915,41 @@
     }
   }
 
+  function quadraticFromThreePoints(p1, p2, p3) {
+    // Interpolação de uma parábola y = ax² + bx + c por três pontos.
+    // Os três valores de X precisam ser diferentes.
+    const x1 = p1.x, y1 = p1.y;
+    const x2 = p2.x, y2 = p2.y;
+    const x3 = p3.x, y3 = p3.y;
+
+    const d1 = (x1 - x2) * (x1 - x3);
+    const d2 = (x2 - x1) * (x2 - x3);
+    const d3 = (x3 - x1) * (x3 - x2);
+
+    if (Math.abs(d1) < 1e-9 || Math.abs(d2) < 1e-9 || Math.abs(d3) < 1e-9) {
+      return null;
+    }
+
+    // Forma de Lagrange expandida.
+    const a = y1 / d1 + y2 / d2 + y3 / d3;
+    const b = -(
+      y1 * (x2 + x3) / d1 +
+      y2 * (x1 + x3) / d2 +
+      y3 * (x1 + x2) / d3
+    );
+    const c =
+      y1 * x2 * x3 / d1 +
+      y2 * x1 * x3 / d2 +
+      y3 * x1 * x2 / d3;
+
+    // Se a ~= 0, os pontos formam praticamente uma reta, não uma função quadrática.
+    if (!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(c) || Math.abs(a) < 1e-9) {
+      return null;
+    }
+
+    return { type: 'quadratic', a, b, c };
+  }
+
   function refresh(){ draw(); updateEquation(); }
 
   function updateInputsFromPoints(){
@@ -910,6 +968,14 @@
     } else {
       x2Input.value = '';
       y2Input.value = '';
+    }
+
+    if (points[2]) {
+      x3Input.value = points[2].x;
+      y3Input.value = points[2].y;
+    } else {
+      x3Input.value = '';
+      y3Input.value = '';
     }
   }
 
@@ -972,14 +1038,38 @@
   });
 
   window.addEventListener('pointerup', (e) => {
-    if(isDragging && currentMode === 'point' && funcType === 'linear' && !hasMoved){
+    if(isDragging && currentMode === 'point' && !hasMoved){
       const rect = container.getBoundingClientRect();
       const sx = e.clientX - rect.left; const sy = e.clientY - rect.top;
+
       if (sx >= 0 && sx <= cssWidth && sy >= 0 && sy <= cssHeight) {
           const plane = toPlane(sx, sy);
-          points.length >= 2 ? points.length = 0 : null;
+          const maxPoints = funcType === 'quadratic' ? 3 : 2;
+
+          // Depois de completar a função, um novo clique inicia uma nova seleção.
+          if (points.length >= maxPoints) {
+            points.length = 0;
+            mathModel = null;
+          }
+
           points.push({x: snap(plane.x), y: snap(plane.y)});
-          updateInputsFromPoints(); refresh();
+
+          if (funcType === 'quadratic' && points.length === 3) {
+            const model = quadraticFromThreePoints(points[0], points[1], points[2]);
+
+            if (model) {
+              mathModel = model;
+              eqError.style.display = 'none';
+              eqError.textContent = 'Equação inválida. Verifique o formato.';
+            } else {
+              mathModel = null;
+              eqError.textContent = 'Não foi possível formar uma parábola. Use três pontos com valores de X diferentes e que não estejam na mesma reta.';
+              eqError.style.display = 'block';
+            }
+          }
+
+          updateInputsFromPoints();
+          refresh();
       }
     }
     isDragging = false;
@@ -1011,11 +1101,44 @@
 
   document.getElementById('apply-btn').addEventListener('click', () => {
     points.length = 0;
-    if(!isNaN(parseFloat(x1Input.value)) && !isNaN(parseFloat(y1Input.value))) points.push({x: parseFloat(x1Input.value), y: parseFloat(y1Input.value)});
-    if(!isNaN(parseFloat(x2Input.value)) && !isNaN(parseFloat(y2Input.value))) points.push({x: parseFloat(x2Input.value), y: parseFloat(y2Input.value)});
+    mathModel = null;
+
+    if(!isNaN(parseFloat(x1Input.value)) && !isNaN(parseFloat(y1Input.value)))
+      points.push({x: parseFloat(x1Input.value), y: parseFloat(y1Input.value)});
+
+    if(!isNaN(parseFloat(x2Input.value)) && !isNaN(parseFloat(y2Input.value)))
+      points.push({x: parseFloat(x2Input.value), y: parseFloat(y2Input.value)});
+
+    if (funcType === 'quadratic') {
+      if(!isNaN(parseFloat(x3Input.value)) && !isNaN(parseFloat(y3Input.value)))
+        points.push({x: parseFloat(x3Input.value), y: parseFloat(y3Input.value)});
+
+      if (points.length === 3) {
+        const model = quadraticFromThreePoints(points[0], points[1], points[2]);
+
+        if (model) {
+          mathModel = model;
+          eqError.style.display = 'none';
+          eqError.textContent = 'Equação inválida. Verifique o formato.';
+        } else {
+          eqError.textContent = 'Não foi possível formar uma parábola. Use três pontos com valores de X diferentes e que não estejam na mesma reta.';
+          eqError.style.display = 'block';
+        }
+      }
+    }
+
+    updateInputsFromPoints();
     refresh();
   });
-  document.getElementById('clear-btn').addEventListener('click', () => { points.length = 0; mathModel = null; document.getElementById('eq-input').value=''; refresh(); });
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    points.length = 0;
+    mathModel = null;
+    document.getElementById('eq-input').value = '';
+    eqError.style.display = 'none';
+    eqError.textContent = 'Equação inválida. Verifique o formato.';
+    updateInputsFromPoints();
+    refresh();
+  });
 
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
