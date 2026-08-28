@@ -806,33 +806,90 @@
     });
   });
 
+  // DESENHO DO PLANO EM COORDENADAS MATEMÁTICAS
+  // Em vez de guardar somente os pixels do canvas, cada traço é salvo em coordenadas
+  // (x, y) do plano. Zoom, pan, resize e zoom do navegador apenas redesenham os traços.
+  const planeStrokes = [];
+  let activePlaneStroke = null;
+
+  function clearPlaneDrawingCanvas(){
+    drawCtx.save();
+    drawCtx.setTransform(1, 0, 0, 1, 0, 0);
+    drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
+    drawCtx.restore();
+  }
+
+  function redrawPlaneDrawing(){
+    clearPlaneDrawingCanvas();
+    if (!planeStrokes.length || cssWidth <= 0 || cssHeight <= 0) return;
+
+    drawCtx.save();
+    drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
+
+    for (const stroke of planeStrokes) {
+      if (!stroke.points || stroke.points.length === 0) continue;
+      drawCtx.strokeStyle = stroke.color || '#1A202C';
+      drawCtx.fillStyle = stroke.color || '#1A202C';
+
+      if (stroke.points.length === 1) {
+        const p = stroke.points[0];
+        const sp = toScreen(p.x, p.y);
+        const width = Math.max(0.8, p.widthWorld * unitSize);
+        drawCtx.beginPath();
+        drawCtx.arc(sp.sx, sp.sy, width / 2, 0, Math.PI * 2);
+        drawCtx.fill();
+        continue;
+      }
+
+      for (let i = 1; i < stroke.points.length; i++) {
+        const p0 = stroke.points[i - 1];
+        const p1 = stroke.points[i];
+        const a = toScreen(p0.x, p0.y);
+        const b = toScreen(p1.x, p1.y);
+        drawCtx.lineWidth = Math.max(0.8, ((p0.widthWorld + p1.widthWorld) / 2) * unitSize);
+        drawCtx.beginPath();
+        drawCtx.moveTo(a.sx, a.sy);
+        drawCtx.lineTo(b.sx, b.sy);
+        drawCtx.stroke();
+      }
+    }
+
+    drawCtx.restore();
+  }
+
   function resizeCanvas(){
     const rect = container.getBoundingClientRect();
-    cssWidth = rect.width; cssHeight = rect.height;
+    cssWidth = rect.width;
+    cssHeight = rect.height;
     dpr = Math.max(window.devicePixelRatio || 1, 1);
 
-    canvas.width = cssWidth * dpr; canvas.height = cssHeight * dpr;
+    canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight * dpr));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const prev = document.createElement('canvas');
-    prev.width = drawLayer.width; prev.height = drawLayer.height;
-    if(drawLayer.width > 0) prev.getContext('2d').drawImage(drawLayer, 0, 0);
-
-    drawLayer.width = cssWidth * dpr; drawLayer.height = cssHeight * dpr;
+    // Alterar width/height limpa o canvas. Isso não é um problema porque os traços
+    // são reconstruídos a partir de planeStrokes logo após o resize.
+    drawLayer.width = Math.max(1, Math.round(cssWidth * dpr));
+    drawLayer.height = Math.max(1, Math.round(cssHeight * dpr));
     drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
-    if(prev.width > 0) drawCtx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, cssWidth, cssHeight);
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
 
     if(originX === 0 && originY === 0) {
-        originX = cssWidth / 2; originY = cssHeight / 2;
+      originX = cssWidth / 2;
+      originY = cssHeight / 2;
     } else {
-        originX = (cssWidth / 2) - (mathCenterX * unitSize);
-        originY = (cssHeight / 2) + (mathCenterY * unitSize);
+      originX = (cssWidth / 2) - (mathCenterX * unitSize);
+      originY = (cssHeight / 2) + (mathCenterY * unitSize);
     }
+
     draw();
+    redrawPlaneDrawing();
   }
   
-  window.forceRefresh = () => draw(); // Exposto para o Dark Mode disparar redraw
+  window.forceRefresh = () => { draw(); redrawPlaneDrawing(); }; // Redesenha gráfico e anotações
 
   function toScreen(x, y){ return { sx: originX + x * unitSize, sy: originY - y * unitSize }; }
   function toPlane(sx, sy){ return { x: (sx - originX) / unitSize, y: (originY - sy) / unitSize }; }
@@ -952,7 +1009,6 @@
     originY = (cssHeight / 2) + cy * unitSize;
     mathCenterX = cx; mathCenterY = cy;
 
-    drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
     refresh();
   });
 
@@ -1210,7 +1266,7 @@
     return { type: 'quadratic', a, b, c };
   }
 
-  function refresh(){ draw(); updateEquation(); }
+  function refresh(){ draw(); redrawPlaneDrawing(); updateEquation(); }
 
   function updateInputsFromPoints(){
     // Atualiza os campos laterais quando o usuário marca pontos diretamente no plano.
@@ -1263,8 +1319,14 @@
     lastMouseX = e.clientX - rect.left; lastMouseY = e.clientY - rect.top;
     if(currentMode === 'draw'){
       let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
-      drawCtx.beginPath(); drawCtx.arc(lastMouseX, lastMouseY, (4*(pressure*2))/2, 0, Math.PI * 2);
-      drawCtx.fillStyle = '#1A202C'; drawCtx.fill();
+      const cw = 4 * (pressure * 2);
+      const plane = toPlane(lastMouseX, lastMouseY);
+      activePlaneStroke = {
+        color: '#1A202C',
+        points: [{ x: plane.x, y: plane.y, widthWorld: cw / unitSize }]
+      };
+      planeStrokes.push(activePlaneStroke);
+      redrawPlaneDrawing();
     }
   });
 
@@ -1282,17 +1344,26 @@
 
       originX += dxPan;
       originY += dyPan;
-      mathCenterX = ((cssWidth / 2) - originX) / unitSize; mathCenterY = (originY - (cssHeight / 2)) / unitSize;
-      const temp = document.createElement('canvas'); temp.width = drawLayer.width; temp.height = drawLayer.height;
-      temp.getContext('2d').drawImage(drawLayer, 0, 0); drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-      drawCtx.drawImage(temp, dxPan*dpr, dyPan*dpr);
+      mathCenterX = ((cssWidth / 2) - originX) / unitSize;
+      mathCenterY = (originY - (cssHeight / 2)) / unitSize;
+
       refresh();
     } else if(currentMode === 'draw'){
       let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
-      let cw = 4*(pressure*2);
-      drawCtx.strokeStyle = '#1A202C'; drawCtx.fillStyle = '#1A202C'; drawCtx.lineWidth = cw; drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
-      drawCtx.beginPath(); drawCtx.moveTo(lastMouseX, lastMouseY); drawCtx.lineTo(mx, my); drawCtx.stroke();
-      drawCtx.beginPath(); drawCtx.arc(mx, my, cw/2, 0, Math.PI * 2); drawCtx.fill();
+      const cw = 4 * (pressure * 2);
+      const plane = toPlane(mx, my);
+
+      if (!activePlaneStroke) {
+        activePlaneStroke = { color: '#1A202C', points: [] };
+        planeStrokes.push(activePlaneStroke);
+      }
+
+      activePlaneStroke.points.push({
+        x: plane.x,
+        y: plane.y,
+        widthWorld: cw / unitSize
+      });
+      redrawPlaneDrawing();
     }
     lastMouseX = mx; lastMouseY = my;
   });
@@ -1333,20 +1404,27 @@
       }
     }
     isDragging = false;
+    activePlaneStroke = null;
   });
 
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const mx = e.clientX - container.getBoundingClientRect().left; const my = e.clientY - container.getBoundingClientRect().top;
-    const planePos = toPlane(mx, my);
-    unitSize = Math.max(0.001, unitSize * Math.exp(-e.deltaY * 0.002)); 
-    originX = mx - planePos.x * unitSize; originY = my + planePos.y * unitSize;
-    mathCenterX = ((cssWidth / 2) - originX) / unitSize; mathCenterY = (originY - (cssHeight / 2)) / unitSize;
 
-    const temp = document.createElement('canvas'); temp.width = drawLayer.width; temp.height = drawLayer.height;
-    temp.getContext('2d').drawImage(drawLayer, 0, 0); drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-    drawCtx.save(); drawCtx.translate(mx*dpr, my*dpr); drawCtx.scale(Math.exp(-e.deltaY * 0.002), Math.exp(-e.deltaY * 0.002)); drawCtx.translate(-mx*dpr, -my*dpr);
-    drawCtx.drawImage(temp, 0, 0); drawCtx.restore();
+    const rect = container.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const planePos = toPlane(mx, my);
+
+    const oldUnitSize = unitSize;
+    const requestedZoom = Math.exp(-e.deltaY * 0.002);
+    unitSize = Math.max(0.001, oldUnitSize * requestedZoom);
+    originX = mx - planePos.x * unitSize;
+    originY = my + planePos.y * unitSize;
+    mathCenterX = ((cssWidth / 2) - originX) / unitSize;
+    mathCenterY = (originY - (cssHeight / 2)) / unitSize;
+
+    // Usa a transformação real do plano (inclusive quando o zoom bate no limite),
+    // mantendo os traços exatamente sobre as coordenadas onde foram desenhados.
     refresh();
   }, { passive: false });
 
@@ -1362,10 +1440,9 @@
   // Apaga somente os traços feitos com a ferramenta "Desenhar" sobre o plano.
   // Pontos, reta/parábola, domínio e demais dados permanecem intactos.
   document.getElementById('clear-plane-drawing').addEventListener('click', () => {
-    drawCtx.save();
-    drawCtx.setTransform(1, 0, 0, 1, 0, 0);
-    drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
-    drawCtx.restore();
+    planeStrokes.length = 0;
+    activePlaneStroke = null;
+    redrawPlaneDrawing();
   });
 
   document.getElementById('apply-btn').addEventListener('click', () => {
