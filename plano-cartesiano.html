@@ -268,6 +268,10 @@
     background: var(--paper); color: var(--ink); z-index: 100;
     transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex; flex-direction: column;
+
+    /* Permite rolar o rascunho quando os controles não couberem na tela. */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .draw-drawer.open{ transform: translateY(0); }
   .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; }
@@ -278,18 +282,96 @@
   .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
   .swatch.active{ border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
   #custom-color{ width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
-  #brush-size{ flex: 1; accent-color: var(--pencil-dark); min-width: 100px; }
+  #brush-size, #stroke-stability{
+    flex: 1;
+    accent-color: var(--pencil-dark);
+    min-width: 100px;
+  }
   .brush-size-label{ font-size: 0.75rem; color: var(--ink-soft); width: 34px; text-align: right; flex-shrink: 0; }
   .tool-btn{ padding: 7px 12px; font-size: 0.75rem; background: transparent; color: var(--ink); border-color: var(--paper-line); }
   .tool-btn.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .draw-canvas-wrap{
-    flex: 1; position: relative; overflow: hidden; touch-action: none;
+    flex: 0 0 2200px;
+    min-height: 2200px;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
     background: repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
                 repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
                 var(--paper);
   }
-  #draw-canvas{ display:block; width: 100%; height: 100%; cursor: crosshair; }
-  .draw-footer{ padding: 14px 32px; display:flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--paper-line); flex-shrink: 0; }
+  #draw-canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    cursor:crosshair;
+    position:relative;
+    z-index:3;
+    background:transparent;
+  }
+
+  /* Plano X/Y integrado à folha do Rascunho Livre */
+  .scratch-graph{
+    position: absolute;
+    width: 340px;
+    height: 240px;
+    z-index: 1;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  .scratch-graph-canvas{
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  .draw-footer{ display:none; }
+
+  .scratch-side-actions{
+    position: fixed;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 120;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px;
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  }
+
+  .scratch-side-actions button{
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 700px){
+    .scratch-side-actions{
+      right: 10px;
+      top: auto;
+      bottom: 18px;
+      transform: none;
+      flex-direction: row;
+    }
+  }
+
+  @media (max-height: 760px), (max-width: 700px) {
+    .draw-header { padding: 12px 18px; }
+    .draw-toolbar { padding: 10px 18px; gap: 12px; }
+    .draw-footer { padding: 10px 18px; }
+    .draw-canvas-wrap { flex-basis: 1800px; min-height: 1800px; }
+  }
 </style>
 </head>
 <body>
@@ -331,6 +413,9 @@
         <button id="mode-point" class="active">📍 Marcar</button>
         <button id="mode-pan">✋ Mover</button>
         <button id="mode-draw">✎ Desenhar</button>
+      </div>
+      <div class="btn-row" style="margin-top:-6px; margin-bottom:14px;">
+        <button id="clear-plane-drawing" class="secondary" style="width:100%;">🧹 Apagar desenho do plano</button>
       </div>
       <div class="interaction-tools" style="margin-bottom: 12px;">
         <button class="input-toggle active" data-val="mouse">🖱 Mouse</button>
@@ -443,16 +528,38 @@
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
+      <span class="row-label">Estabilidade</span>
+      <input type="range" id="stroke-stability" min="0" max="90" value="55" step="5">
+      <span class="brush-size-label" id="stroke-stability-label" style="width:48px;">55%</span>
+    </div>
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+    <div class="tool-row">
       <span class="row-label">Ferramenta</span>
       <button id="tool-pen" class="tool-btn active">✎ Caneta</button>
       <button id="tool-eraser" class="tool-btn">▭ Borracha</button>
     </div>
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+    <div class="tool-row">
+      <span class="row-label">Gráfico X/Y</span>
+      <button id="add-scratch-graph" class="tool-btn">＋ Inserir</button>
+      <button id="remove-scratch-graph" class="tool-btn">✕ Remover</button>
+      <span id="scratch-graph-place-hint" class="row-label" style="display:none; color:var(--pencil-dark);">Clique no rascunho para posicionar</span>
+      <span class="row-label">Tamanho</span>
+      <input type="range" id="scratch-graph-size" min="220" max="520" value="340" step="10" style="width:130px;">
+      <span class="brush-size-label" id="scratch-graph-size-label" style="width:58px;">340px</span>
+    </div>
   </div>
-  <div class="draw-canvas-wrap"><canvas id="draw-canvas"></canvas></div>
-  <div class="draw-footer">
-    <button id="draw-undo" class="secondary">↺ Desfazer</button>
-    <button id="draw-clear" class="secondary">🗑 Limpar tudo</button>
+  <div class="scratch-side-actions" aria-label="Ações do rascunho">
+    <button id="draw-undo" class="secondary" title="Desfazer último traço">↺</button>
+    <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">🗑</button>
   </div>
+
+  <div class="draw-canvas-wrap">
+    <canvas id="draw-canvas"></canvas>
+
+
+  </div>
+  <div class="draw-footer"></div>
 </aside>
 
 <script>
@@ -462,6 +569,7 @@
     document.body.classList.toggle('dark-theme');
     themeBtn.innerText = document.body.classList.contains('dark-theme') ? '☀️ Claro' : '🌙 Escuro';
     if(typeof forceRefresh === 'function') forceRefresh(); // Chama função de redraw global
+    window.dispatchEvent(new Event('scratch-theme-change'));
   });
 
   const panel = document.querySelector('.panel');
@@ -1099,6 +1207,15 @@
     });
   });
 
+  // Apaga somente os traços feitos com a ferramenta "Desenhar" sobre o plano.
+  // Pontos, reta/parábola, domínio e demais dados permanecem intactos.
+  document.getElementById('clear-plane-drawing').addEventListener('click', () => {
+    drawCtx.save();
+    drawCtx.setTransform(1, 0, 0, 1, 0, 0);
+    drawCtx.clearRect(0, 0, drawLayer.width, drawLayer.height);
+    drawCtx.restore();
+  });
+
   document.getElementById('apply-btn').addEventListener('click', () => {
     points.length = 0;
     mathModel = null;
@@ -1151,8 +1268,186 @@
   const drawer = document.getElementById('draw-drawer');
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
+
+  const scratchGraphSize = document.getElementById('scratch-graph-size');
+  const scratchGraphSizeLabel = document.getElementById('scratch-graph-size-label');
+  const scratchGraphPlaceHint = document.getElementById('scratch-graph-place-hint');
+  const addScratchGraphBtn = document.getElementById('add-scratch-graph');
+
+  let placingScratchGraph = false;
+  let scratchGraphCounter = 0;
+  const scratchGraphs = [];
+
   let dpr = Math.max(window.devicePixelRatio || 1, 1);
   let isOpen = false, history = [], tool = 'pen', currentColor = '#1A202C', currentSize = 4, drawing = false, lastX=0, lastY=0;
+
+  // Estabilização do traço: 0 = direto, 90 = bastante suave.
+  let currentStability = 55;
+  let filteredX = 0, filteredY = 0;
+  let previousMidX = 0, previousMidY = 0;
+
+  function setScratchGraphPlacementMode(enabled){
+    placingScratchGraph = enabled;
+
+    addScratchGraphBtn.classList.toggle('active', enabled);
+    addScratchGraphBtn.textContent = enabled ? '📍 Clique no rascunho' : '＋ Inserir';
+    scratchGraphPlaceHint.style.display = enabled ? 'inline' : 'none';
+
+    if (enabled) {
+      canvas.style.cursor = 'crosshair';
+    } else {
+      updateBrushCursor();
+    }
+  }
+
+  function getScratchGraphDimensions(){
+    const width = Math.max(220, Math.min(520, parseInt(scratchGraphSize.value, 10) || 340));
+    const height = Math.round(width * 0.70);
+    scratchGraphSizeLabel.textContent = width + 'px';
+    return { width, height };
+  }
+
+  function drawOneScratchGraph(graph){
+    const wrapper = graph.wrapper;
+    const graphCanvas = graph.canvas;
+    const graphCtx = graph.ctx;
+
+    const rect = wrapper.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const graphDpr = Math.max(window.devicePixelRatio || 1, 1);
+    graphCanvas.width = Math.round(rect.width * graphDpr);
+    graphCanvas.height = Math.round(rect.height * graphDpr);
+    graphCanvas.style.width = rect.width + 'px';
+    graphCanvas.style.height = rect.height + 'px';
+
+    graphCtx.setTransform(graphDpr, 0, 0, graphDpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const colors = getThemeColors();
+
+    graphCtx.clearRect(0, 0, w, h);
+    graphCtx.strokeStyle = colors.axis;
+    graphCtx.fillStyle = colors.axis;
+    graphCtx.lineWidth = 1.6;
+    graphCtx.lineCap = 'round';
+    graphCtx.lineJoin = 'round';
+
+    // Eixo X
+    graphCtx.beginPath();
+    graphCtx.moveTo(8, cy);
+    graphCtx.lineTo(w - 10, cy);
+    graphCtx.stroke();
+
+    // Seta X
+    graphCtx.beginPath();
+    graphCtx.moveTo(w - 10, cy);
+    graphCtx.lineTo(w - 18, cy - 5);
+    graphCtx.moveTo(w - 10, cy);
+    graphCtx.lineTo(w - 18, cy + 5);
+    graphCtx.stroke();
+
+    // Eixo Y
+    graphCtx.beginPath();
+    graphCtx.moveTo(cx, h - 8);
+    graphCtx.lineTo(cx, 10);
+    graphCtx.stroke();
+
+    // Seta Y
+    graphCtx.beginPath();
+    graphCtx.moveTo(cx, 10);
+    graphCtx.lineTo(cx - 5, 18);
+    graphCtx.moveTo(cx, 10);
+    graphCtx.lineTo(cx + 5, 18);
+    graphCtx.stroke();
+
+    // Rótulos
+    graphCtx.font = `600 13px 'IBM Plex Mono', monospace`;
+    graphCtx.textBaseline = 'middle';
+
+    graphCtx.textAlign = 'right';
+    graphCtx.fillText('x', w - 12, cy - 13);
+
+    graphCtx.textAlign = 'left';
+    graphCtx.fillText('y', cx + 8, 14);
+
+    graphCtx.fillStyle = colors.inkSoft;
+    graphCtx.font = `11px 'IBM Plex Mono', monospace`;
+    graphCtx.fillText('0', cx + 6, cy + 10);
+  }
+
+  function redrawAllScratchGraphs(){
+    scratchGraphs.forEach(drawOneScratchGraph);
+  }
+
+  function createScratchGraphAt(clientX, clientY){
+    const wrap = canvas.parentElement;
+    const wrapRect = wrap.getBoundingClientRect();
+    const { width, height } = getScratchGraphDimensions();
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'scratch-graph';
+    wrapper.dataset.graphId = String(++scratchGraphCounter);
+    wrapper.style.width = width + 'px';
+    wrapper.style.height = height + 'px';
+
+    const graphCanvas = document.createElement('canvas');
+    graphCanvas.className = 'scratch-graph-canvas';
+    graphCanvas.setAttribute('aria-hidden', 'true');
+    wrapper.appendChild(graphCanvas);
+
+    wrap.appendChild(wrapper);
+
+    // Centraliza no ponto escolhido e mantém dentro da folha.
+    let left = clientX - wrapRect.left - width / 2;
+    let top = clientY - wrapRect.top - height / 2;
+
+    const maxLeft = Math.max(0, wrap.clientWidth - width);
+    const maxTop = Math.max(0, wrap.clientHeight - height);
+
+    left = Math.max(0, Math.min(maxLeft, left));
+    top = Math.max(0, Math.min(maxTop, top));
+
+    wrapper.style.left = left + 'px';
+    wrapper.style.top = top + 'px';
+
+    const graph = {
+      id: scratchGraphCounter,
+      wrapper,
+      canvas: graphCanvas,
+      ctx: graphCanvas.getContext('2d')
+    };
+
+    scratchGraphs.push(graph);
+    requestAnimationFrame(() => drawOneScratchGraph(graph));
+  }
+
+  function beginScratchGraphPlacement(){
+    setScratchGraphPlacementMode(true);
+    getScratchGraphDimensions();
+  }
+
+  addScratchGraphBtn.addEventListener('click', beginScratchGraphPlacement);
+
+  document.getElementById('remove-scratch-graph').addEventListener('click', () => {
+    // Remove somente o último gráfico inserido.
+    const graph = scratchGraphs.pop();
+    if (graph) graph.wrapper.remove();
+    setScratchGraphPlacementMode(false);
+  });
+
+  scratchGraphSize.addEventListener('input', () => {
+    getScratchGraphDimensions();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && placingScratchGraph) {
+      setScratchGraphPlacementMode(false);
+    }
+  });
 
   function resizeCanvas(){
     const rect = canvas.parentElement.getBoundingClientRect(); if(rect.width===0) return;
@@ -1164,40 +1459,130 @@
     if(prev.width>0) ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, rect.width, rect.height);
   }
   
-  document.getElementById('open-draw-btn').addEventListener('click', () => { isOpen = true; drawer.classList.add('open'); requestAnimationFrame(resizeCanvas); });
-  document.getElementById('draw-close').addEventListener('click', () => { isOpen = false; drawer.classList.remove('open'); });
-  window.addEventListener('resize', () => { if(isOpen) resizeCanvas(); });
+  document.getElementById('open-draw-btn').addEventListener('click', () => {
+    isOpen = true;
+    drawer.classList.add('open');
+    requestAnimationFrame(() => {
+      resizeCanvas();
+      redrawAllScratchGraphs();
+    });
+  });
+
+  document.getElementById('draw-close').addEventListener('click', () => {
+    isOpen = false;
+    drawer.classList.remove('open');
+  });
+
+  window.addEventListener('resize', () => {
+    if(isOpen) {
+      resizeCanvas();
+      redrawAllScratchGraphs();
+    }
+  });
+
+  window.addEventListener('scratch-theme-change', () => {
+    redrawAllScratchGraphs();
+  });
 
   function pushHistory(){ history.push(canvas.toDataURL()); if(history.length>25) history.shift(); }
   function getPos(e){ const rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
   
+  function getStabilizedPoint(rawX, rawY) {
+    // Quanto maior a estabilidade, menor a resposta instantânea ao tremor.
+    const stability = Math.max(0, Math.min(90, currentStability)) / 100;
+    const responsiveness = 1 - (stability * 0.84);
+
+    filteredX += (rawX - filteredX) * responsiveness;
+    filteredY += (rawY - filteredY) * responsiveness;
+
+    return { x: filteredX, y: filteredY };
+  }
+
+  function resetStrokeStabilizer(x, y) {
+    filteredX = x;
+    filteredY = y;
+    lastX = x;
+    lastY = y;
+    previousMidX = x;
+    previousMidY = y;
+  }
+
   function updateBrushCursor() {
     if (tool === 'eraser') {
       const s = currentSize * 1.6; 
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${(s/2)-1}" fill="none" stroke="black" stroke-width="1"/></svg>`;
       canvas.style.cursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${s/2} ${s/2}, auto`;
-    } else canvas.style.cursor = 'crosshair';
+    } else {
+      canvas.style.cursor = 'crosshair';
+    }
   }
 
-  canvas.addEventListener('pointerdown', (e) => { 
+  canvas.addEventListener('pointerdown', (e) => {
+    if (placingScratchGraph) {
+      e.preventDefault();
+
+      createScratchGraphAt(e.clientX, e.clientY);
+      setScratchGraphPlacementMode(false);
+
+      // Este clique serve apenas para posicionar um novo gráfico.
+      return;
+    }
+
     if (e.pointerType !== 'mouse') e.preventDefault();
-    pushHistory(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; 
-    let pWidth = (tool==='eraser'?currentSize*1.6:currentSize) * ((window.usePenPressure && e.pointerType==='pen'&&e.pressure)?e.pressure*2:1);
+
+    pushHistory();
+    drawing = true;
+
+    const p = getPos(e);
+    resetStrokeStabilizer(p.x, p.y);
+
+    let pWidth = (tool === 'eraser' ? currentSize * 1.6 : currentSize) *
+      ((window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure * 2 : 1);
+
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fillStyle = tool==='eraser'?'#000':currentColor; ctx.fill(); 
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, pWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor;
+    ctx.fill();
   });
-  
-  canvas.addEventListener('pointermove', (e) => { 
-    if(!drawing) return; if (e.pointerType !== 'mouse') e.preventDefault(); 
-    const p=getPos(e); 
-    let pWidth = (tool==='eraser'?currentSize*1.6:currentSize) * ((window.usePenPressure && e.pointerType==='pen'&&e.pressure)?e.pressure*2:1);
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!drawing) return;
+    if (e.pointerType !== 'mouse') e.preventDefault();
+
+    const p = getPos(e);
+    const smooth = getStabilizedPoint(p.x, p.y);
+
+    let pWidth = (tool === 'eraser' ? currentSize * 1.6 : currentSize) *
+      ((window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure * 2 : 1);
+
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.strokeStyle = tool==='eraser'?'#000':currentColor; ctx.fillStyle = tool==='eraser'?'#000':currentColor;
-    ctx.lineWidth = pWidth; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); 
-    ctx.beginPath(); ctx.arc(p.x, p.y, pWidth/2, 0, Math.PI*2); ctx.fill();
-    lastX=p.x; lastY=p.y; 
+    ctx.strokeStyle = tool === 'eraser' ? '#000' : currentColor;
+    ctx.fillStyle = tool === 'eraser' ? '#000' : currentColor;
+    ctx.lineWidth = pWidth;
+
+    // Curva por ponto médio: suaviza cantos e pequenas oscilações da mão.
+    const midX = (lastX + smooth.x) / 2;
+    const midY = (lastY + smooth.y) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(previousMidX, previousMidY);
+    ctx.quadraticCurveTo(lastX, lastY, midX, midY);
+    ctx.stroke();
+
+    // Preenche a ponta para evitar pequenas falhas em movimentos lentos.
+    ctx.beginPath();
+    ctx.arc(midX, midY, pWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    previousMidX = midX;
+    previousMidY = midY;
+    lastX = smooth.x;
+    lastY = smooth.y;
   });
-  window.addEventListener('pointerup', ()=>drawing=false); window.addEventListener('pointercancel', ()=>drawing=false);
+
+  window.addEventListener('pointerup', () => drawing = false);
+  window.addEventListener('pointercancel', () => drawing = false);
 
   document.querySelectorAll('.swatch').forEach(sw => {
     sw.addEventListener('click', () => { 
@@ -1207,10 +1592,30 @@
     });
   });
   document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; document.getElementById('tool-pen').click(); });
-  document.getElementById('brush-size').addEventListener('input', (e) => { currentSize=parseInt(e.target.value); document.getElementById('brush-size-label').textContent=currentSize+'px'; updateBrushCursor();});
+  document.getElementById('brush-size').addEventListener('input', (e) => {
+    currentSize = parseInt(e.target.value);
+    document.getElementById('brush-size-label').textContent = currentSize + 'px';
+    updateBrushCursor();
+  });
+
+  document.getElementById('stroke-stability').addEventListener('input', (e) => {
+    currentStability = parseInt(e.target.value);
+    document.getElementById('stroke-stability-label').textContent = currentStability + '%';
+  });
   
-  document.getElementById('tool-pen').addEventListener('click', (e) => { tool='pen'; e.target.classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); updateBrushCursor();});
-  document.getElementById('tool-eraser').addEventListener('click', (e) => { tool='eraser'; e.target.classList.add('active'); document.getElementById('tool-pen').classList.remove('active'); updateBrushCursor();});
+  document.getElementById('tool-pen').addEventListener('click', (e) => {
+    tool = 'pen';
+    e.target.classList.add('active');
+    document.getElementById('tool-eraser').classList.remove('active');
+    updateBrushCursor();
+  });
+
+  document.getElementById('tool-eraser').addEventListener('click', (e) => {
+    tool = 'eraser';
+    e.target.classList.add('active');
+    document.getElementById('tool-pen').classList.remove('active');
+    updateBrushCursor();
+  });
 
   document.getElementById('draw-undo').addEventListener('click', () => {
     if(history.length===0) return; const img=new Image();
