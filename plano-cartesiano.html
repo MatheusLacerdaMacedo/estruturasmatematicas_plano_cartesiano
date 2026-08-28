@@ -504,6 +504,11 @@
   const domMaxInput = document.getElementById('domain-max');
   const eqError = document.getElementById('eq-error');
 
+  const x1Input = document.getElementById('x1');
+  const y1Input = document.getElementById('y1');
+  const x2Input = document.getElementById('x2');
+  const y2Input = document.getElementById('y2');
+
   // Controle de Funções UI
   document.querySelectorAll('.func-toggle').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -780,6 +785,24 @@
     }
     
     // DESENHO LINEAR
+    // Os pontos são desenhados independentemente da existência da reta,
+    // para que o usuário veja imediatamente o ponto recém-marcado.
+    if (funcType === 'linear') {
+      points.forEach((p, idx) => {
+        if (!hasDMin || p.x >= dMin) {
+          if (!hasDMax || p.x <= dMax) {
+            drawPOI(
+              p.x,
+              p.y,
+              idx === 0 ? '#3182CE' : '#E53E3E',
+              `P${idx+1}`
+            );
+          }
+        }
+      });
+    }
+
+    // A reta só é formada quando os dois pontos já existem.
     if (funcType === 'linear' && points.length === 2 && plotMinX <= plotMaxX) {
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
@@ -798,9 +821,6 @@
             ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cssHeight); ctx.stroke();
         }
       }
-      points.forEach((p, idx) => {
-          if (!hasDMin || p.x >= dMin) if (!hasDMax || p.x <= dMax) drawPOI(p.x, p.y, idx === 0 ? '#3182CE' : '#E53E3E', `P${idx+1}`);
-      });
     }
   }
 
@@ -874,6 +894,25 @@
 
   function refresh(){ draw(); updateEquation(); }
 
+  function updateInputsFromPoints(){
+    // Atualiza os campos laterais quando o usuário marca pontos diretamente no plano.
+    if (points[0]) {
+      x1Input.value = points[0].x;
+      y1Input.value = points[0].y;
+    } else {
+      x1Input.value = '';
+      y1Input.value = '';
+    }
+
+    if (points[1]) {
+      x2Input.value = points[1].x;
+      y2Input.value = points[1].y;
+    } else {
+      x2Input.value = '';
+      y2Input.value = '';
+    }
+  }
+
   domMinInput.addEventListener('input', refresh);
   domMaxInput.addEventListener('input', refresh);
 
@@ -910,11 +949,17 @@
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
     
     if(currentMode === 'pan'){
-      originX += mx - lastMouseX; originY += my - lastMouseY;
+      // Movimento mais suave e controlado ao arrastar o plano.
+      const panSpeed = 0.45;
+      const dxPan = (mx - lastMouseX) * panSpeed;
+      const dyPan = (my - lastMouseY) * panSpeed;
+
+      originX += dxPan;
+      originY += dyPan;
       mathCenterX = ((cssWidth / 2) - originX) / unitSize; mathCenterY = (originY - (cssHeight / 2)) / unitSize;
       const temp = document.createElement('canvas'); temp.width = drawLayer.width; temp.height = drawLayer.height;
       temp.getContext('2d').drawImage(drawLayer, 0, 0); drawCtx.clearRect(0,0, drawLayer.width, drawLayer.height);
-      drawCtx.drawImage(temp, (mx-lastMouseX)*dpr, (my-lastMouseY)*dpr);
+      drawCtx.drawImage(temp, dxPan*dpr, dyPan*dpr);
       refresh();
     } else if(currentMode === 'draw'){
       let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
