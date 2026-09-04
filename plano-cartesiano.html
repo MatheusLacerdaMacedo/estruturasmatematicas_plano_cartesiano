@@ -341,7 +341,7 @@
   .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
   .swatch.active{ border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
   #custom-color{ width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
-  #brush-size, #stroke-stability{
+  #scratch-pen-size, #scratch-eraser-size, #stroke-stability{
     flex: 1;
     accent-color: var(--pencil-dark);
     min-width: 100px;
@@ -467,13 +467,16 @@
 
   .draw-footer{ display:none; }
 
+  /* Ações do rascunho ficam fora do drawer rolável.
+     Isso garante que Ctrl+Z e Apagar permaneçam presos à viewport
+     mesmo com milhares de pixels de rolagem na folha. */
   .scratch-side-actions{
     position: fixed;
     right: 18px;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 120;
-    display: flex;
+    z-index: 160;
+    display: none;
     flex-direction: column;
     gap: 10px;
     padding: 8px;
@@ -481,6 +484,10 @@
     border: 1px solid var(--paper-line);
     border-radius: 10px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  }
+
+  .draw-drawer.open + .scratch-side-actions{
+    display: flex;
   }
 
   .scratch-side-actions button{
@@ -513,6 +520,82 @@
     .draw-footer { padding: 10px 18px; }
     .draw-canvas-wrap { flex-basis: 5000px; min-height: 5000px; }
   }
+
+
+  /* ---------- CONTROLES AVANÇADOS ---------- */
+  .plane-floating-controls{
+    position:absolute; left:14px; top:14px; z-index:20;
+    display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100% - 28px);
+    padding:6px; border:1px solid var(--paper-line); border-radius:10px;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    box-shadow:0 4px 14px rgba(0,0,0,0.10); backdrop-filter:blur(6px);
+  }
+  .plane-floating-controls button{ padding:7px 10px; font-size:.75rem; }
+  .coord-indicator{
+    position:absolute; left:14px; bottom:14px; z-index:20;
+    padding:7px 10px; border:1px solid var(--paper-line); border-radius:8px;
+    background:color-mix(in srgb, var(--paper) 92%, transparent); color:var(--ink);
+    font-size:.74rem; box-shadow:0 3px 12px rgba(0,0,0,.08); pointer-events:none;
+  }
+  .exam-plane-badge{
+    position:absolute; right:14px; top:14px; z-index:20; display:none;
+    padding:7px 10px; border-radius:8px; background:var(--ink); color:var(--paper);
+    font-size:.72rem; font-weight:700; letter-spacing:.05em;
+  }
+  body.exam-mode .exam-plane-badge{ display:block; }
+  body.exam-mode .study-answer{ display:none !important; }
+  .exam-mode-message{ display:none; }
+  body.exam-mode .exam-mode-message{ display:block; }
+
+  .main-draw-settings{
+    display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px;
+    padding:12px; border:1px solid var(--paper-line); border-radius:var(--radius);
+    background:var(--blueprint-deep);
+  }
+  .main-setting-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.72rem; color:var(--ink-soft); }
+  .main-setting-row > span:first-child{ min-width:66px; text-transform:uppercase; }
+  .main-color-swatch{ width:24px; height:24px; min-width:24px; padding:0; border-radius:50%; border:2px solid transparent; }
+  .main-color-swatch.active{ border-color:var(--ink); box-shadow:0 0 0 2px var(--paper); }
+  #main-draw-color{ width:28px; height:28px; padding:0; border:0; background:none; }
+  #main-pen-size, #main-eraser-size, #scratch-pen-size, #scratch-eraser-size{ accent-color:var(--pencil-dark); }
+  .range-value{ min-width:44px; text-align:right; color:var(--ink); }
+
+  .function-list, .function-history{ display:flex; flex-direction:column; gap:7px; }
+  .function-item, .history-item{
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px;
+    padding:8px 9px; border:1px solid var(--paper-line); border-radius:7px; background:var(--blueprint-deep);
+  }
+  .function-color-dot{ width:11px; height:11px; border-radius:50%; }
+  .function-text, .history-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.78rem; }
+  .function-actions, .history-actions{ display:flex; gap:4px; }
+  .function-actions button, .history-actions button{ padding:4px 7px; font-size:.68rem; }
+  .function-item.inactive{ opacity:.48; }
+  .function-item.selected{ outline:2px solid color-mix(in srgb, var(--pencil-dark) 45%, transparent); }
+  .empty-mini{ color:var(--ink-soft); font-size:.76rem; padding:8px 0; }
+  .intersection-list{ margin-top:10px; font-size:.74rem; line-height:1.65; color:var(--ink-soft); }
+
+  .help-modal{
+    position:fixed; inset:0; z-index:300; display:none; place-items:center;
+    padding:20px; background:rgba(0,0,0,.45);
+  }
+  .help-modal.open{ display:grid; }
+  .help-card{
+    width:min(720px, 96vw); max-height:86vh; overflow:auto; padding:24px;
+    background:var(--paper); color:var(--ink); border:1px solid var(--paper-line); border-radius:14px;
+    box-shadow:0 18px 60px rgba(0,0,0,.25);
+  }
+  .help-card h2{ margin-top:0; font-family:'Space Grotesk',sans-serif; }
+  .help-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 22px; font-size:.8rem; line-height:1.6; }
+  .help-key{ font-weight:700; color:var(--pencil-dark); }
+  .help-card .btn-row{ justify-content:flex-end; }
+
+  @media (max-width:700px){
+    .plane-floating-controls{ top:8px; left:8px; max-width:calc(100% - 16px); }
+    .coord-indicator{ left:8px; bottom:70px; }
+    .help-grid{ grid-template-columns:1fr; }
+    .header-actions{ flex-wrap:wrap; }
+  }
+
 </style>
 </head>
 <body>
@@ -524,6 +607,8 @@
     <p>Estude funções do 1º e 2º grau. Marque pontos, controle o domínio e analise tabelas de valores instantâneas.</p>
   </div>
   <div class="header-actions">
+    <button id="exam-mode-toggle" class="secondary" title="Alternar entre modo estudo e modo prova">🎓 Modo Estudo</button>
+    <button id="help-btn" class="secondary" title="Ajuda e atalhos">❔ Ajuda</button>
     <button id="theme-toggle" class="secondary">🌙 Escuro</button>
     <button id="open-draw-btn">✎ Rascunho Livre</button>
   </div>
@@ -535,6 +620,14 @@
       <canvas id="plane" aria-label="Plano cartesiano interativo"></canvas>
       <canvas id="plane-draw" aria-label="Camada de desenho sobre o plano"></canvas>
     </div>
+    <div class="plane-floating-controls" aria-label="Controles do plano">
+      <button id="zoom-out-btn" class="secondary" title="Diminuir zoom (-)">−</button>
+      <button id="center-plane-btn" class="secondary" title="Centralizar plano (0)">⌖ Centralizar</button>
+      <button id="zoom-in-btn" class="secondary" title="Aumentar zoom (+)">＋</button>
+      <button id="export-plane-btn" class="secondary" title="Exportar plano (Ctrl+E)">⇩ Exportar</button>
+    </div>
+    <div id="coord-indicator" class="coord-indicator">x: 0,00 · y: 0,00</div>
+    <div class="exam-plane-badge">MODO PROVA</div>
   </div>
 
   <div class="panel">
@@ -564,6 +657,22 @@
         <button class="input-toggle active" data-val="mouse">🖱 Mouse</button>
         <button class="input-toggle" data-val="pen">🖊 Mesa Digitalizadora</button>
       </div>
+      <div class="main-draw-settings">
+        <div class="main-setting-row">
+          <span>Cor</span>
+          <button class="main-color-swatch active" data-color="#1A202C" style="background:#1A202C" title="Preto"></button>
+          <button class="main-color-swatch" data-color="#E53E3E" style="background:#E53E3E" title="Vermelho"></button>
+          <button class="main-color-swatch" data-color="#3182CE" style="background:#3182CE" title="Azul"></button>
+          <button class="main-color-swatch" data-color="#38A169" style="background:#38A169" title="Verde"></button>
+          <input id="main-draw-color" type="color" value="#1A202C" title="Escolher outra cor">
+        </div>
+        <div class="main-setting-row">
+          <span>Caneta</span><input id="main-pen-size" type="range" min="1" max="24" value="4"><span id="main-pen-size-label" class="range-value">4px</span>
+        </div>
+        <div class="main-setting-row">
+          <span>Borracha</span><input id="main-eraser-size" type="range" min="8" max="60" value="18"><span id="main-eraser-size-label" class="range-value">18px</span>
+        </div>
+      </div>
     </div>
 
     <div class="block" id="equation-input-section">
@@ -588,8 +697,23 @@
       </div>
 
       <div class="btn-row">
-        <button id="apply-eq-btn">Gerar Gráfico e Focar</button>
+        <button id="apply-eq-btn">＋ Adicionar função e focar</button>
       </div>
+    </div>
+
+    <div class="block" id="functions-manager-section">
+      <h2>Funções no Plano</h2>
+      <div id="function-list" class="function-list"><div class="empty-mini">Nenhuma função adicionada.</div></div>
+      <div id="intersection-list" class="intersection-list study-answer"></div>
+    </div>
+
+    <div class="block">
+      <h2>Histórico de Funções</h2>
+      <div id="function-history" class="function-history"><div class="empty-mini">O histórico aparecerá aqui.</div></div>
+    </div>
+
+    <div class="block exam-mode-message">
+      <div class="empty-state">Modo prova ativo: tabela, análise matemática e marcações automáticas de interseção estão ocultas.</div>
     </div>
 
     <div class="block" id="points-section">
@@ -618,11 +742,11 @@
       <p class="hint" id="points-hint">Marque dois pontos no plano ou informe as coordenadas.</p>
       <div class="btn-row">
         <button id="apply-btn">Aplicar coordenadas</button>
-        <button id="clear-btn" class="secondary">Limpar Gráfico</button>
+        <button id="clear-btn" class="secondary">Limpar funções</button>
       </div>
     </div>
 
-    <div class="block">
+    <div class="block study-answer">
       <h2>Tabela de Valores</h2>
       <table class="val-table">
         <thead><tr><th id="table-variable-header">x</th><th id="table-value-header">y</th></tr></thead>
@@ -632,7 +756,7 @@
       </table>
     </div>
 
-    <div class="block">
+    <div class="block study-answer">
       <h2>Análise Matemática</h2>
       <div id="equation-area">
         <div class="empty-state">Defina a equação ou os pontos para gerar a análise.</div>
@@ -681,9 +805,14 @@
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
-      <span class="row-label">Espessura</span>
-      <input type="range" id="brush-size" min="1" max="30" value="4">
-      <span class="brush-size-label" id="brush-size-label">4px</span>
+      <span class="row-label">Caneta</span>
+      <input type="range" id="scratch-pen-size" min="1" max="30" value="4">
+      <span class="brush-size-label" id="scratch-pen-size-label">4px</span>
+    </div>
+    <div class="tool-row">
+      <span class="row-label">Borracha</span>
+      <input type="range" id="scratch-eraser-size" min="6" max="70" value="18">
+      <span class="brush-size-label" id="scratch-eraser-size-label" style="width:44px;">18px</span>
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
@@ -716,11 +845,6 @@
     </div>
   </div>
   </div>
-  <div class="scratch-side-actions" aria-label="Ações do rascunho">
-    <button id="draw-undo" class="secondary" title="Desfazer último traço">↺</button>
-    <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">🗑</button>
-  </div>
-
   <div class="draw-canvas-wrap">
     <div id="scratch-print-layer" class="scratch-print-layer" aria-hidden="true"></div>
     <canvas id="draw-canvas"></canvas>
@@ -728,6 +852,28 @@
   </div>
   <div class="draw-footer"></div>
 </aside>
+
+<div class="scratch-side-actions" aria-label="Ações do rascunho">
+  <button id="draw-undo" class="secondary" title="Desfazer último traço (Ctrl+Z)">↺</button>
+  <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">🗑</button>
+</div>
+
+<div id="help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="help-card">
+    <h2 id="help-title">Ajuda rápida</h2>
+    <p class="hint">O estado da ferramenta é salvo automaticamente no navegador. Use múltiplas funções para comparar gráficos e encontrar interseções.</p>
+    <div class="help-grid">
+      <div><span class="help-key">M</span> — Marcar pontos</div><div><span class="help-key">V</span> — Mover plano</div>
+      <div><span class="help-key">D</span> — Desenhar</div><div><span class="help-key">E</span> — Borracha</div>
+      <div><span class="help-key">+</span> / <span class="help-key">−</span> — Zoom</div><div><span class="help-key">0</span> — Centralizar</div>
+      <div><span class="help-key">P</span> — Estudo / Prova</div><div><span class="help-key">?</span> — Abrir ajuda</div>
+      <div><span class="help-key">Ctrl+Z</span> — Desfazer desenho</div><div><span class="help-key">Ctrl+E</span> — Exportar plano</div>
+    </div>
+    <p class="hint"><b>Múltiplas funções:</b> escreva uma função e clique em “Adicionar função”. Use os botões 👁, selecionar e ✕ para gerenciar cada gráfico.</p>
+    <p class="hint"><b>Modo prova:</b> oculta tabela, análise e interseções automáticas sem apagar os gráficos.</p>
+    <div class="btn-row"><button id="help-close-btn">Fechar</button></div>
+  </div>
+</div>
 
 <script>
   // TEMA ESCURO / MOBILE BOTTOM SHEET / ENTRADAS
@@ -737,6 +883,7 @@
     themeBtn.innerText = document.body.classList.contains('dark-theme') ? '☀️ Claro' : '🌙 Escuro';
     if(typeof forceRefresh === 'function') forceRefresh(); // Chama função de redraw global
     window.dispatchEvent(new Event('scratch-theme-change'));
+    window.dispatchEvent(new Event('app-state-change'));
   });
 
   const panel = document.querySelector('.panel');
@@ -785,6 +932,19 @@
   let currentVariable = 'x';
   let currentFunctionName = null;
 
+  const APP_STORAGE_KEY = 'plano-cartesiano-estudo-v2';
+  const FUNCTION_COLORS = ['#E8A33D','#3182CE','#E53E3E','#38A169','#805AD5','#D53F8C','#319795','#DD6B20'];
+  const graphedFunctions = [];
+  const functionHistory = [];
+  let functionIdCounter = 0;
+  let activeFunctionId = null;
+  let mainDrawColor = '#1A202C';
+  let mainPenSizePx = 4;
+  let mainEraserRadiusPx = 18;
+  let examMode = false;
+  let appSaveTimer = null;
+  let pendingRestoredView = null;
+
   const domMinInput = document.getElementById('domain-min');
   const domMaxInput = document.getElementById('domain-max');
   const eqError = document.getElementById('eq-error');
@@ -820,6 +980,207 @@
     updateFunctionIdentityUI();
   }
 
+  function evaluateModel(model, x){
+    if (!model) return NaN;
+    return model.type === 'linear' ? model.m * x + model.b : model.a * x * x + model.b * x + model.c;
+  }
+
+  function modelABC(model){
+    return model.type === 'linear' ? {a:0,b:model.m,c:model.b} : {a:model.a,b:model.b,c:model.c};
+  }
+
+  function dependentLabelFor(series){
+    return series.functionName ? `${series.functionName}(${series.variable})` : 'y';
+  }
+
+  function formatNumber(value){
+    if (!Number.isFinite(value)) return String(value);
+    const rounded = Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(6));
+    return String(rounded).replace('.', ',');
+  }
+
+  function formatSeriesEquation(series){
+    const v = series.variable || 'x';
+    const dep = dependentLabelFor(series);
+    const m = series.model;
+    if (m.type === 'linear') {
+      let expr = '';
+      if (Math.abs(m.m) > 1e-12) expr = m.m === 1 ? v : m.m === -1 ? `-${v}` : `${formatNumber(m.m)}${v}`;
+      if (Math.abs(m.b) > 1e-12 || !expr) expr += `${expr ? (m.b >= 0 ? ' + ' : ' - ') : (m.b < 0 ? '-' : '')}${formatNumber(Math.abs(m.b))}`;
+      return `${dep} = ${expr}`;
+    }
+    let expr = m.a === 1 ? `${v}²` : m.a === -1 ? `-${v}²` : `${formatNumber(m.a)}${v}²`;
+    if (Math.abs(m.b) > 1e-12) expr += m.b > 0 ? ` + ${m.b === 1 ? v : `${formatNumber(m.b)}${v}`}` : ` - ${m.b === -1 ? v : `${formatNumber(Math.abs(m.b))}${v}`}`;
+    if (Math.abs(m.c) > 1e-12) expr += m.c > 0 ? ` + ${formatNumber(m.c)}` : ` - ${formatNumber(Math.abs(m.c))}`;
+    return `${dep} = ${expr}`;
+  }
+
+  function getSeriesDomain(series){
+    return {
+      min: Number.isFinite(series.domainMin) ? series.domainMin : -Infinity,
+      max: Number.isFinite(series.domainMax) ? series.domainMax : Infinity
+    };
+  }
+
+  function isInsideSeriesDomain(series, x){
+    const d = getSeriesDomain(series);
+    return x >= d.min - 1e-9 && x <= d.max + 1e-9;
+  }
+
+  function syncFunctionTypeButtons(type){
+    funcType = type === 'quadratic' ? 'quadratic' : 'linear';
+    document.querySelectorAll('.func-toggle').forEach(b => b.classList.toggle('active', b.dataset.val === funcType));
+    document.getElementById('point-row-3').style.display = funcType === 'quadratic' ? 'flex' : 'none';
+  }
+
+  function makeReferencePoints(model){
+    if (model.type === 'linear') {
+      const p = [{x:0,y:model.b}];
+      if (Math.abs(model.m) > 1e-9) p.push(Math.abs(model.b) < 1e-9 ? {x:1,y:model.m} : {x:-model.b/model.m,y:0});
+      else p.push({x:1,y:model.b});
+      return p;
+    }
+    const p = [{x:0,y:model.c}];
+    const xv = -model.b/(2*model.a);
+    p.push({x:xv,y:evaluateModel(model,xv)});
+    const delta=model.b*model.b-4*model.a*model.c;
+    if(delta>=0){ p.push({x:(-model.b+Math.sqrt(delta))/(2*model.a),y:0}); if(delta>1e-9)p.push({x:(-model.b-Math.sqrt(delta))/(2*model.a),y:0}); }
+    return p;
+  }
+
+  function focusOnPoints(focusPts){
+    const pts=(focusPts||[]).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+    if(!pts.length) return;
+    let pMinX=pts[0].x,pMaxX=pts[0].x,pMinY=pts[0].y,pMaxY=pts[0].y;
+    pts.forEach(p=>{pMinX=Math.min(pMinX,p.x);pMaxX=Math.max(pMaxX,p.x);pMinY=Math.min(pMinY,p.y);pMaxY=Math.max(pMaxY,p.y);});
+    const marginX=Math.abs(pMaxX-pMinX)*.3+2, marginY=Math.abs(pMaxY-pMinY)*.3+2;
+    pMinX-=marginX;pMaxX+=marginX;pMinY-=marginY;pMaxY+=marginY;
+    let rangeX=pMaxX-pMinX,rangeY=pMaxY-pMinY;
+    if(rangeX<8){pMinX-=4;pMaxX+=4;rangeX=pMaxX-pMinX;}
+    if(rangeY<8){pMinY-=4;pMaxY+=4;rangeY=pMaxY-pMinY;}
+    unitSize=Math.max(.001,Math.min(cssWidth/rangeX,cssHeight/rangeY));
+    const cx=(pMinX+pMaxX)/2,cy=(pMinY+pMaxY)/2;
+    mathCenterX=cx;mathCenterY=cy;
+    originX=cssWidth/2-cx*unitSize;originY=cssHeight/2+cy*unitSize;
+  }
+
+  function addHistoryEntry(input, type){
+    const text=String(input||'').trim(); if(!text)return;
+    const existing=functionHistory.findIndex(h=>h.input===text);
+    if(existing>=0) functionHistory.splice(existing,1);
+    functionHistory.unshift({input:text,type});
+    if(functionHistory.length>12) functionHistory.length=12;
+    renderFunctionHistory();
+  }
+
+  function renderFunctionHistory(){
+    const host=document.getElementById('function-history'); if(!host)return;
+    if(!functionHistory.length){host.innerHTML='<div class="empty-mini">O histórico aparecerá aqui.</div>';return;}
+    host.innerHTML=functionHistory.map((h,i)=>`<div class="history-item"><span>↺</span><span class="history-text" title="${h.input.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${h.input.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="history-actions"><button class="secondary" data-history-index="${i}">Usar</button></span></div>`).join('');
+  }
+
+  function selectFunction(id, doRefresh=true){
+    const series=graphedFunctions.find(f=>f.id===id); if(!series)return;
+    activeFunctionId=id; mathModel={...series.model}; currentVariable=series.variable||'x'; currentFunctionName=series.functionName||null;
+    syncFunctionTypeButtons(series.model.type);
+    document.getElementById('eq-input').value=series.input||formatSeriesEquation(series);
+    domMinInput.value=Number.isFinite(series.domainMin)?series.domainMin:''; domMaxInput.value=Number.isFinite(series.domainMax)?series.domainMax:'';
+    points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));
+    updateInputsFromPoints(); updateFunctionIdentityUI(); renderFunctionList();
+    if(doRefresh) refresh();
+  }
+
+  function renderFunctionList(){
+    const host=document.getElementById('function-list'); if(!host)return;
+    if(!graphedFunctions.length){host.innerHTML='<div class="empty-mini">Nenhuma função adicionada.</div>';renderIntersections();return;}
+    host.innerHTML=graphedFunctions.map(f=>`<div class="function-item ${f.visible?'':'inactive'} ${f.id===activeFunctionId?'selected':''}"><span class="function-color-dot" style="background:${f.color}"></span><span class="function-text" title="${formatSeriesEquation(f)}">${formatSeriesEquation(f)}</span><span class="function-actions"><button class="secondary" data-fn-action="toggle" data-id="${f.id}" title="Mostrar/ocultar">${f.visible?'👁':'◌'}</button><button class="secondary" data-fn-action="select" data-id="${f.id}" title="Selecionar">✓</button><button class="secondary" data-fn-action="remove" data-id="${f.id}" title="Remover">✕</button></span></div>`).join('');
+    renderIntersections();
+  }
+
+  function computeIntersections(){
+    const visible=graphedFunctions.filter(f=>f.visible); const hits=[];
+    for(let i=0;i<visible.length;i++) for(let j=i+1;j<visible.length;j++){
+      const f1=visible[i],f2=visible[j],A=modelABC(f1.model),B=modelABC(f2.model);
+      const a=A.a-B.a,b=A.b-B.b,c=A.c-B.c; let roots=[];
+      if(Math.abs(a)<1e-10){ if(Math.abs(b)>1e-10)roots=[-c/b]; }
+      else { const d=b*b-4*a*c; if(d>=-1e-10){const sd=Math.sqrt(Math.max(0,d));roots=[(-b+sd)/(2*a)];if(sd>1e-8)roots.push((-b-sd)/(2*a));} }
+      roots.forEach(x=>{ if(!Number.isFinite(x)||!isInsideSeriesDomain(f1,x)||!isInsideSeriesDomain(f2,x))return; const y=evaluateModel(f1.model,x); if(!Number.isFinite(y))return; if(!hits.some(h=>Math.hypot(h.x-x,h.y-y)<1e-5))hits.push({x,y,f1,f2}); });
+    }
+    return hits;
+  }
+
+  function renderIntersections(){
+    const host=document.getElementById('intersection-list'); if(!host)return;
+    if(examMode){host.innerHTML='';return;}
+    const hits=computeIntersections();
+    host.innerHTML=hits.length?`<b>Interseções automáticas:</b><br>${hits.map((h,i)=>`I${i+1}: (${formatNumber(h.x)}, ${formatNumber(h.y)})`).join('<br>')}`:(graphedFunctions.filter(f=>f.visible).length>1?'Nenhuma interseção real encontrada entre as funções visíveis.':'');
+  }
+
+  function drawFunctionSeries(series, screenMinX, screenMaxX){
+    if(!series.visible)return;
+    const d=getSeriesDomain(series); const minX=Math.max(screenMinX,d.min),maxX=Math.min(screenMaxX,d.max); if(minX>maxX)return;
+    ctx.strokeStyle=series.color; ctx.lineWidth=series.id===activeFunctionId?3.1:2.35; ctx.beginPath();
+    if(series.model.type==='linear'){
+      const a=toScreen(minX,evaluateModel(series.model,minX)),b=toScreen(maxX,evaluateModel(series.model,maxX));ctx.moveTo(a.sx,a.sy);ctx.lineTo(b.sx,b.sy);
+    }else{
+      const steps=Math.max(180,Math.min(700,Math.round(cssWidth/2))); const dx=(maxX-minX)/steps || 1;
+      for(let i=0;i<=steps;i++){const x=i===steps?maxX:minX+i*dx,y=evaluateModel(series.model,x),p=toScreen(x,y); if(i===0)ctx.moveTo(p.sx,p.sy);else ctx.lineTo(p.sx,p.sy);}
+    }
+    ctx.stroke();
+  }
+
+  function centerPlane(){ mathCenterX=0;mathCenterY=0;originX=cssWidth/2;originY=cssHeight/2;refresh(); }
+  function zoomPlane(factor){
+    const mx=cssWidth/2,my=cssHeight/2,p=toPlane(mx,my); unitSize=Math.max(.001,Math.min(10000,unitSize*factor));
+    originX=mx-p.x*unitSize;originY=my+p.y*unitSize;mathCenterX=(cssWidth/2-originX)/unitSize;mathCenterY=(originY-cssHeight/2)/unitSize;refresh();
+  }
+
+  function setExamMode(enabled){
+    examMode=!!enabled;document.body.classList.toggle('exam-mode',examMode);
+    const btn=document.getElementById('exam-mode-toggle'); if(btn)btn.textContent=examMode?'📝 Modo Prova':'🎓 Modo Estudo';
+    renderIntersections();draw();scheduleSaveAppState();
+  }
+
+  function exportMainPlane(){
+    if(!cssWidth||!cssHeight)return;
+    const scale=2,legend=graphedFunctions.filter(f=>f.visible),legendHeight=Math.max(58,30+legend.length*22);
+    const out=document.createElement('canvas');out.width=Math.round(cssWidth*scale);out.height=Math.round((cssHeight+legendHeight)*scale);const c=out.getContext('2d');c.scale(scale,scale);
+    const style=getComputedStyle(document.body);c.fillStyle=style.getPropertyValue('--blueprint').trim()||'#fff';c.fillRect(0,0,cssWidth,cssHeight+legendHeight);
+    c.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,cssWidth,cssHeight);c.drawImage(drawLayer,0,0,drawLayer.width,drawLayer.height,0,0,cssWidth,cssHeight);
+    c.fillStyle=style.getPropertyValue('--paper').trim()||'#fff';c.fillRect(0,cssHeight,cssWidth,legendHeight);c.fillStyle=style.getPropertyValue('--ink').trim()||'#111';c.font="600 13px 'IBM Plex Mono', monospace";c.fillText('Funções visíveis',16,cssHeight+22);
+    legend.forEach((f,i)=>{c.fillStyle=f.color;c.fillRect(16,cssHeight+34+i*22,10,10);c.fillStyle=style.getPropertyValue('--ink').trim()||'#111';c.font="12px 'IBM Plex Mono', monospace";c.fillText(formatSeriesEquation(f),34,cssHeight+44+i*22);});
+    const data=out.toDataURL('image/png'); const JSPDF=window.jspdf&&window.jspdf.jsPDF;
+    if(JSPDF){const pdf=new JSPDF({orientation:'landscape',unit:'mm',format:'a4'});pdf.setFontSize(15);pdf.text('Plano Cartesiano — Funções',12,12);const pw=pdf.internal.pageSize.getWidth()-24,ph=pdf.internal.pageSize.getHeight()-24;const ratio=out.width/out.height;let w=pw,h=w/ratio;if(h>ph){h=ph;w=h*ratio;}pdf.addImage(data,'PNG',12,18,w,h);pdf.save('plano-cartesiano.pdf');}
+    else {const a=document.createElement('a');a.href=data;a.download='plano-cartesiano.png';a.click();}
+  }
+
+  function serializableFunctions(){return graphedFunctions.map(f=>({id:f.id,input:f.input,model:f.model,variable:f.variable,functionName:f.functionName,color:f.color,visible:f.visible,domainMin:f.domainMin,domainMax:f.domainMax}));}
+  function saveAppStateNow(){
+    const state={version:2,functions:serializableFunctions(),history:functionHistory,activeFunctionId,view:{unitSize,mathCenterX,mathCenterY},planeStrokes:clonePlaneStrokes(),mainDrawColor,mainPenSizePx,mainEraserRadiusPx,examMode,theme:document.body.classList.contains('dark-theme')?'dark':'light',funcType,currentVariable,currentFunctionName,domainMin:domMinInput.value,domainMax:domMaxInput.value};
+    try{localStorage.setItem(APP_STORAGE_KEY,JSON.stringify(state));}
+    catch(err){
+      // Se muitos traços excederem a cota, preserva funções, histórico e configurações.
+      try{localStorage.setItem(APP_STORAGE_KEY,JSON.stringify({...state,planeStrokes:[]}));}
+      catch(err2){console.warn('Não foi possível salvar o estado no localStorage.',err2);}
+    }
+  }
+  function scheduleSaveAppState(){clearTimeout(appSaveTimer);appSaveTimer=setTimeout(saveAppStateNow,250);}
+
+  function restoreAppState(){
+    try{const raw=localStorage.getItem(APP_STORAGE_KEY);if(!raw)return;const st=JSON.parse(raw);if(!st||st.version!==2)return;
+      graphedFunctions.splice(0,graphedFunctions.length,...(st.functions||[]));functionIdCounter=graphedFunctions.reduce((m,f)=>Math.max(m,Number(f.id)||0),0);
+      functionHistory.splice(0,functionHistory.length,...(st.history||[]).slice(0,12));activeFunctionId=st.activeFunctionId||null;
+      planeStrokes.splice(0,planeStrokes.length,...(st.planeStrokes||[]));mainDrawColor=st.mainDrawColor||mainDrawColor;mainPenSizePx=Number(st.mainPenSizePx)||4;mainEraserRadiusPx=Number(st.mainEraserRadiusPx)||18;pendingRestoredView=st.view||null;
+      if(st.theme==='dark')document.body.classList.add('dark-theme');else document.body.classList.remove('dark-theme');themeBtn.textContent=document.body.classList.contains('dark-theme')?'☀️ Claro':'🌙 Escuro';
+      document.getElementById('main-draw-color').value=mainDrawColor;document.getElementById('main-pen-size').value=mainPenSizePx;document.getElementById('main-pen-size-label').textContent=mainPenSizePx+'px';document.getElementById('main-eraser-size').value=mainEraserRadiusPx;document.getElementById('main-eraser-size-label').textContent=mainEraserRadiusPx+'px';
+      document.querySelectorAll('.main-color-swatch').forEach(b=>b.classList.toggle('active',b.dataset.color.toLowerCase()===mainDrawColor.toLowerCase()));
+      domMinInput.value=st.domainMin||'';domMaxInput.value=st.domainMax||'';setExamMode(!!st.examMode);
+      if(activeFunctionId&&graphedFunctions.some(f=>f.id===activeFunctionId))selectFunction(activeFunctionId,false);else if(graphedFunctions.length)selectFunction(graphedFunctions[graphedFunctions.length-1].id,false);
+      else {currentVariable=st.currentVariable||'x';currentFunctionName=st.currentFunctionName||null;syncFunctionTypeButtons(st.funcType||'linear');updateFunctionIdentityUI();}
+      renderFunctionHistory();renderFunctionList();
+    }catch(err){console.warn('Estado salvo inválido.',err);}
+  }
+
   // Controle de Funções UI
   document.querySelectorAll('.func-toggle').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -842,8 +1203,10 @@
             document.getElementById('hint-format').innerText = 'f(x) = ax² + bx + c';
         }
         resetFunctionIdentity();
+        activeFunctionId = null;
         mathModel = null; points.length = 0;
         eqError.style.display = 'none';
+        renderFunctionList();
         refresh();
     });
   });
@@ -858,7 +1221,7 @@
   // "apagar tudo" cria um ponto de restauração para o botão Desfazer / Ctrl+Z.
   const planeUndoStack = [];
   const PLANE_UNDO_LIMIT = 60;
-  const PLANE_ERASER_RADIUS_PX = 18;
+
 
   function clonePlaneStrokes(){
     return planeStrokes.map(stroke => ({
@@ -953,8 +1316,17 @@
     drawCtx.lineJoin = 'round';
 
     if(originX === 0 && originY === 0) {
-      originX = cssWidth / 2;
-      originY = cssHeight / 2;
+      if (pendingRestoredView) {
+        unitSize = Number(pendingRestoredView.unitSize) || unitSize;
+        mathCenterX = Number(pendingRestoredView.mathCenterX) || 0;
+        mathCenterY = Number(pendingRestoredView.mathCenterY) || 0;
+        originX = (cssWidth / 2) - (mathCenterX * unitSize);
+        originY = (cssHeight / 2) + (mathCenterY * unitSize);
+        pendingRestoredView = null;
+      } else {
+        originX = cssWidth / 2;
+        originY = cssHeight / 2;
+      }
     } else {
       originX = (cssWidth / 2) - (mathCenterX * unitSize);
       originY = (cssHeight / 2) + (mathCenterY * unitSize);
@@ -1112,69 +1484,15 @@
     eqError.style.display = 'none';
     const val = document.getElementById('eq-input').value;
     if(!val.trim()) return;
-    
     const parsed = parseEquation(val, funcType);
-    if(!parsed) {
-        eqError.style.display = 'block';
-        document.getElementById('eq-input').style.borderColor = 'var(--danger)';
-        return;
-    }
-    document.getElementById('eq-input').style.borderColor = 'var(--paper-line)';
-    currentVariable = parsed.variable || 'x';
-    currentFunctionName = parsed.functionName || null;
-    updateFunctionIdentityUI();
-
-    let focusPts = [];
-    if (funcType === 'linear' && parsed.type === 'linear') {
-        mathModel = parsed;
-        points.length = 0;
-        points.push({ x: 0, y: parsed.b });
-        if (Math.abs(parsed.m) > 1e-9) {
-            if (Math.abs(parsed.b) < 1e-9) points.push({ x: 1, y: parsed.m });
-            else points.push({ x: parseFloat((-parsed.b / parsed.m).toPrecision(10)), y: 0 }); 
-        } else points.push({ x: 1, y: parsed.b });
-        
-        document.getElementById('x1').value = points[0].x; document.getElementById('y1').value = points[0].y;
-        document.getElementById('x2').value = points[1].x; document.getElementById('y2').value = points[1].y;
-        focusPts = points;
-    } else {
-        mathModel = parsed;
-        points.length = 0; 
-        focusPts.push({ x: 0, y: parsed.c }); 
-        const xv = -parsed.b / (2 * parsed.a);
-        const yv = -(parsed.b * Math.pow(xv, 2) + parsed.b * xv + parsed.c); 
-        focusPts.push({ x: xv, y: yv }); 
-        
-        const delta = parsed.b * parsed.b - 4 * parsed.a * parsed.c;
-        if (delta >= 0) {
-            focusPts.push({ x: (-parsed.b + Math.sqrt(delta)) / (2 * parsed.a), y: 0 });
-            focusPts.push({ x: (-parsed.b - Math.sqrt(delta)) / (2 * parsed.a), y: 0 });
-        }
-    }
-
-    // AUTO-ZOOM
-    let pMinX = focusPts[0].x, pMaxX = focusPts[0].x;
-    let pMinY = focusPts[0].y, pMaxY = focusPts[0].y;
-    focusPts.forEach(p => {
-        if(p.x < pMinX) pMinX = p.x; if(p.x > pMaxX) pMaxX = p.x;
-        if(p.y < pMinY) pMinY = p.y; if(p.y > pMaxY) pMaxY = p.y;
-    });
-
-    const marginX = Math.abs(pMaxX - pMinX) * 0.3 + 2;
-    const marginY = Math.abs(pMaxY - pMinY) * 0.3 + 2;
-    pMinX -= marginX; pMaxX += marginX; pMinY -= marginY; pMaxY += marginY;
-
-    let rangeX = pMaxX - pMinX, rangeY = pMaxY - pMinY;
-    if (rangeX < 8) { pMinX -= 4; pMaxX += 4; rangeX = pMaxX - pMinX; }
-    if (rangeY < 8) { pMinY -= 4; pMaxY += 4; rangeY = pMaxY - pMinY; }
-
-    unitSize = Math.max(0.001, Math.min(cssWidth / rangeX, cssHeight / rangeY)); 
-    const cx = (pMinX + pMaxX) / 2, cy = (pMinY + pMaxY) / 2;
-    originX = (cssWidth / 2) - cx * unitSize;
-    originY = (cssHeight / 2) + cy * unitSize;
-    mathCenterX = cx; mathCenterY = cy;
-
-    refresh();
+    if(!parsed){eqError.style.display='block';document.getElementById('eq-input').style.borderColor='var(--danger)';return;}
+    document.getElementById('eq-input').style.borderColor='var(--paper-line)';
+    currentVariable=parsed.variable||'x';currentFunctionName=parsed.functionName||null;mathModel={...parsed};syncFunctionTypeButtons(parsed.type);updateFunctionIdentityUI();
+    const series={id:++functionIdCounter,input:val.trim(),model:{...parsed},variable:currentVariable,functionName:currentFunctionName,color:FUNCTION_COLORS[(functionIdCounter-1)%FUNCTION_COLORS.length],visible:true,domainMin:domMinInput.value===''?null:Number(domMinInput.value),domainMax:domMaxInput.value===''?null:Number(domMaxInput.value)};
+    delete series.model.variable;delete series.model.functionName;
+    graphedFunctions.push(series);activeFunctionId=series.id;
+    points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));updateInputsFromPoints();
+    addHistoryEntry(val.trim(),series.model.type);renderFunctionList();focusOnPoints(makeReferencePoints(series.model));refresh();
   });
 
   document.getElementById('eq-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('apply-eq-btn').click(); });
@@ -1247,6 +1565,15 @@
     const plotMinX = hasDMin ? Math.max(screenMinX, dMin) : screenMinX;
     const plotMaxX = hasDMax ? Math.min(screenMaxX, dMax) : screenMaxX;
 
+    if (graphedFunctions.length) {
+      graphedFunctions.forEach(series => drawFunctionSeries(series, screenMinX, screenMaxX));
+      if (!examMode) {
+        computeIntersections().forEach((hit, idx) => {
+          if (hit.x >= screenMinX && hit.x <= screenMaxX) drawPOI(hit.x, hit.y, '#805AD5', `I${idx+1}`);
+        });
+      }
+    }
+
     // Pontos escolhidos pelo usuário no modo quadrático.
     if (funcType === 'quadratic' && points.length > 0) {
       const pointColors = ['#3182CE', '#E53E3E', '#38A169'];
@@ -1258,7 +1585,7 @@
     }
 
     // DESENHO QUADRÁTICO
-    if (funcType === 'quadratic' && mathModel && mathModel.type === 'quadratic') {
+    if (graphedFunctions.length === 0 && funcType === 'quadratic' && mathModel && mathModel.type === 'quadratic') {
         const { a, b, c } = mathModel;
         ctx.strokeStyle = '#E8A33D'; ctx.lineWidth = 2.4; ctx.beginPath();
         
@@ -1306,7 +1633,7 @@
     }
 
     // A reta só é formada quando os dois pontos já existem.
-    if (funcType === 'linear' && points.length === 2 && plotMinX <= plotMaxX) {
+    if (graphedFunctions.length === 0 && funcType === 'linear' && points.length === 2 && plotMinX <= plotMaxX) {
       const [p1, p2] = points;
       const dx = p2.x - p1.x; const dy = p2.y - p1.y;
 
@@ -1328,95 +1655,28 @@
   }
 
   function updateTable() {
-    const tbody = document.getElementById('table-body');
-    const requiredPoints = funcType === 'quadratic' ? 3 : 2;
-    if (!mathModel && points.length < requiredPoints) {
-        tbody.innerHTML = `<tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>`;
-        return;
-    }
-    
-    tbody.innerHTML = '';
-    const dMin = parseFloat(domMinInput.value); const hasDMin = !isNaN(dMin);
-    const dMax = parseFloat(domMaxInput.value); const hasDMax = !isNaN(dMax);
-    
-    let model = mathModel;
-    if (funcType === 'linear' && !model && points.length === 2) {
-        const dx = points[1].x - points[0].x;
-        if(Math.abs(dx) > 1e-9) model = { type: 'linear', m: (points[1].y - points[0].y)/dx, b: points[0].y - ((points[1].y - points[0].y)/dx)*points[0].x };
-    }
-
-    if (!model) return;
-
-    for (let x = -3; x <= 3; x++) {
-        if (hasDMin && x < dMin) continue;
-        if (hasDMax && x > dMax) continue;
-
-        let y = 0;
-        if (model.type === 'linear') y = model.m * x + model.b;
-        else y = model.a * x * x + model.b * x + model.c;
-        tbody.innerHTML += `<tr><td>${x}</td><td>${y.toFixed(2).replace('.00','')}</td></tr>`;
-    }
-    if (tbody.innerHTML === '') tbody.innerHTML = `<tr><td colspan="2" style="color:var(--ink-soft)">Valores fora do domínio</td></tr>`;
+    const tbody=document.getElementById('table-body');tbody.innerHTML='';
+    let model=mathModel;
+    if(!model&&funcType==='linear'&&points.length===2){const dx=points[1].x-points[0].x;if(Math.abs(dx)>1e-9)model={type:'linear',m:(points[1].y-points[0].y)/dx,b:points[0].y-((points[1].y-points[0].y)/dx)*points[0].x};}
+    if(!model){tbody.innerHTML='<tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>';return;}
+    const active=graphedFunctions.find(f=>f.id===activeFunctionId);const dMin=active&&Number.isFinite(active.domainMin)?active.domainMin:parseFloat(domMinInput.value),dMax=active&&Number.isFinite(active.domainMax)?active.domainMax:parseFloat(domMaxInput.value);const hasMin=Number.isFinite(dMin),hasMax=Number.isFinite(dMax);
+    for(let x=-3;x<=3;x++){if(hasMin&&x<dMin)continue;if(hasMax&&x>dMax)continue;const y=evaluateModel(model,x);tbody.innerHTML+=`<tr><td>${x}</td><td>${formatNumber(y)}</td></tr>`;}
+    if(!tbody.innerHTML)tbody.innerHTML='<tr><td colspan="2" style="color:var(--ink-soft)">Valores fora do domínio</td></tr>';
   }
 
   function updateEquation(){
-    updateTable();
-
-    const variable = currentVariable || 'x';
-    const dependent = getDependentLabel();
-
-    if(funcType === 'linear') {
-        if(points.length < 2) { equationArea.innerHTML = `<div class="empty-state">Defina a equação ou dois pontos para calcular.</div>`; return; }
-        const dx = points[1].x - points[0].x; const dy = points[1].y - points[0].y;
-        if(Math.abs(dx) < 1e-9){ equationArea.innerHTML = `<div class="vertical-warning">Reta vertical. Não é função afim.</div>`; return; }
-        const mFrac = fracLabel(dy, dx);
-        const bNum = points[0].y * dx - dy * points[0].x; const bDen = dx;
-        const bFracExact = fracLabel(bNum, bDen); const bValue = bNum / bDen;
-
-        let eqStr = `${dependent} = `;
-        eqStr += (mFrac === '1') ? variable : (mFrac === '-1') ? `-${variable}` : `${mFrac}${variable}`;
-        if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
-
-        let rootHtml = '';
-        if (Math.abs(dy) > 1e-9) {
-          rootHtml = `<div><b>Raiz:</b> ${variable} = ${fracLabel(-bNum, dy)}</div>`;
-        }
-
-        equationArea.innerHTML =
-          `<div class="equation-box">` +
-            `<div class="eq">${eqStr}</div>` +
-            `<div class="sub">m = ${mFrac} &nbsp;·&nbsp; b = ${bValue === 0 ? '0' : bFracExact}</div>` +
-          `</div>` +
-          `<div class="steps" style="margin-top:14px;">` +
-            `<div><b>Valor quando ${variable} = 0:</b> ${bValue === 0 ? '0' : bFracExact}</div>` +
-            `${rootHtml}` +
-          `</div>`;
-    }
-    else if (funcType === 'quadratic') {
-        if (!mathModel) { equationArea.innerHTML = `<div class="empty-state">Escreva a equação para calcular.</div>`; return; }
-        const { a, b, c } = mathModel;
-
-        let aStr = a === 1 ? `${variable}²` : a === -1 ? `-${variable}²` : `${a}${variable}²`;
-        let bStr = b === 0 ? '' : b === 1 ? ` + ${variable}` : b === -1 ? ` - ${variable}` : b > 0 ? ` + ${b}${variable}` : ` - ${Math.abs(b)}${variable}`;
-        let cStr = c === 0 ? '' : c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`;
-
-        const delta = b*b - 4*a*c; const xv = -b / (2*a); const yv = -delta / (4*a);
-        let rootHtml = '';
-        if (delta > 0) rootHtml = `<div><b>Raízes (${variable}₁, ${variable}₂):</b> ${((-b + Math.sqrt(delta)) / (2*a)).toFixed(2)} e ${((-b - Math.sqrt(delta)) / (2*a)).toFixed(2)}</div>`;
-        else if (delta === 0) rootHtml = `<div><b>Raiz dupla (${variable}):</b> ${(-b / (2*a)).toFixed(2)}</div>`;
-        else rootHtml = `<div><b>Raízes:</b> Não possui (Δ < 0)</div>`;
-
-        equationArea.innerHTML =
-          `<div class="equation-box">` +
-            `<div class="eq">${dependent} = ${aStr}${bStr}${cStr}</div>` +
-            `<div class="sub">a = ${a}, b = ${b}, c = ${c}</div>` +
-          `</div>` +
-          `<div class="steps" style="margin-top:14px;">` +
-            `<div><b>Vértice:</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div>` +
-            `<div><b>Δ:</b> ${delta}</div>` +
-            `${rootHtml}` +
-            `<div><b>Valor quando ${variable} = 0:</b> ${c}</div>` +
-          `</div>`;
+    updateTable();const variable=currentVariable||'x',dependent=getDependentLabel();let model=mathModel;
+    if(!model&&funcType==='linear'&&points.length===2){const dx=points[1].x-points[0].x;if(Math.abs(dx)>1e-9)model={type:'linear',m:(points[1].y-points[0].y)/dx,b:points[0].y-((points[1].y-points[0].y)/dx)*points[0].x};}
+    if(!model){equationArea.innerHTML='<div class="empty-state">Defina uma equação ou pontos para gerar a análise.</div>';return;}
+    if(model.type==='linear'){
+      const m=model.m,b=model.b;let expr=m===1?variable:m===-1?`-${variable}`:Math.abs(m)<1e-12?'':`${formatNumber(m)}${variable}`;
+      if(Math.abs(b)>1e-12||!expr)expr+=`${expr?(b>=0?' + ':' - '):(b<0?'-':'')}${formatNumber(Math.abs(b))}`;
+      const root=Math.abs(m)>1e-12?`<div><b>Raiz:</b> ${variable} = ${formatNumber(-b/m)}</div>`:'';
+      equationArea.innerHTML=`<div class="equation-box"><div class="eq">${dependent} = ${expr}</div><div class="sub">m = ${formatNumber(m)} &nbsp;·&nbsp; b = ${formatNumber(b)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Valor quando ${variable}=0:</b> ${formatNumber(b)}</div>${root}</div>`;
+    }else{
+      const a=model.a,b=model.b,c=model.c,delta=b*b-4*a*c,xv=-b/(2*a),yv=-delta/(4*a);const active=graphedFunctions.find(f=>f.id===activeFunctionId);const shown=active?formatSeriesEquation(active):`${dependent} = ${formatNumber(a)}${variable}²`;
+      let roots=delta>1e-10?`<div><b>Raízes:</b> ${formatNumber((-b+Math.sqrt(delta))/(2*a))} e ${formatNumber((-b-Math.sqrt(delta))/(2*a))}</div>`:Math.abs(delta)<=1e-10?`<div><b>Raiz dupla:</b> ${formatNumber(-b/(2*a))}</div>`:'<div><b>Raízes:</b> não possui raízes reais</div>';
+      equationArea.innerHTML=`<div class="equation-box"><div class="eq">${shown}</div><div class="sub">a = ${formatNumber(a)}, b = ${formatNumber(b)}, c = ${formatNumber(c)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Vértice:</b> (${formatNumber(xv)}, ${formatNumber(yv)})</div><div><b>Δ:</b> ${formatNumber(delta)}</div>${roots}<div><b>Valor quando ${variable}=0:</b> ${formatNumber(c)}</div></div>`;
     }
   }
 
@@ -1455,7 +1715,7 @@
     return { type: 'quadratic', a, b, c };
   }
 
-  function refresh(){ draw(); redrawPlaneDrawing(); updateEquation(); }
+  function refresh(){ draw(); redrawPlaneDrawing(); updateEquation(); scheduleSaveAppState(); }
 
   function updateInputsFromPoints(){
     // Atualiza os campos laterais quando o usuário marca pontos diretamente no plano.
@@ -1484,8 +1744,9 @@
     }
   }
 
-  domMinInput.addEventListener('input', refresh);
-  domMaxInput.addEventListener('input', refresh);
+  function updateActiveDomain(){ const f=graphedFunctions.find(item=>item.id===activeFunctionId); if(f){f.domainMin=domMinInput.value===''?null:Number(domMinInput.value);f.domainMax=domMaxInput.value===''?null:Number(domMaxInput.value);} refresh();renderFunctionList(); }
+  domMinInput.addEventListener('input', updateActiveDomain);
+  domMaxInput.addEventListener('input', updateActiveDomain);
 
   // MOUSE & POINTER API
   let isDragging = false, lastMouseX = 0, lastMouseY = 0, hasMoved = false;
@@ -1507,9 +1768,9 @@
   function updatePlaneCursor() {
     if (currentMode === 'erase') {
       // O círculo mostra exatamente a área apagada. O hotspot fica no centro.
-      const s = PLANE_ERASER_RADIUS_PX * 2 + 3;
+      const s = mainEraserRadiusPx * 2 + 3;
       const hot = Math.floor(s / 2);
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${hot}" cy="${hot}" r="${PLANE_ERASER_RADIUS_PX}" fill="rgba(255,255,255,0.12)" stroke="black" stroke-width="1.2"/><circle cx="${hot}" cy="${hot}" r="1.5" fill="black"/></svg>`;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${hot}" cy="${hot}" r="${mainEraserRadiusPx}" fill="rgba(255,255,255,0.12)" stroke="black" stroke-width="1.2"/><circle cx="${hot}" cy="${hot}" r="1.5" fill="black"/></svg>`;
       container.style.cursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${hot} ${hot}, crosshair`;
     } else if (currentMode === 'draw') {
       // Cursor do pincel centrado exatamente no ponto em que o canvas desenha.
@@ -1547,7 +1808,7 @@
 
       if (pts.length === 1) {
         const sp = toScreen(pts[0].x, pts[0].y);
-        if (Math.hypot(screenX - sp.sx, screenY - sp.sy) > PLANE_ERASER_RADIUS_PX) {
+        if (Math.hypot(screenX - sp.sx, screenY - sp.sy) > mainEraserRadiusPx) {
           rebuilt.push(stroke);
         }
         continue;
@@ -1562,13 +1823,13 @@
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i];
         const sp = toScreen(p.x, p.y);
-        const inside = Math.hypot(screenX - sp.sx, screenY - sp.sy) <= PLANE_ERASER_RADIUS_PX;
+        const inside = Math.hypot(screenX - sp.sx, screenY - sp.sy) <= mainEraserRadiusPx;
 
         let segmentHit = false;
         if (i > 0) {
           const prev = pts[i - 1];
           const a = toScreen(prev.x, prev.y);
-          segmentHit = pointToSegmentDistance(screenX, screenY, a.sx, a.sy, sp.sx, sp.sy) <= PLANE_ERASER_RADIUS_PX;
+          segmentHit = pointToSegmentDistance(screenX, screenY, a.sx, a.sy, sp.sx, sp.sy) <= mainEraserRadiusPx;
         }
 
         if (inside || segmentHit) {
@@ -1594,10 +1855,10 @@
     if(currentMode === 'draw'){
       savePlaneUndoState();
       let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
-      const cw = 4 * (pressure * 2);
+      const cw = mainPenSizePx * (window.usePenPressure && e.pointerType === 'pen' ? Math.max(0.25, pressure * 2) : 1);
       const plane = toPlane(lastMouseX, lastMouseY);
       activePlaneStroke = {
-        color: '#1A202C',
+        color: mainDrawColor,
         points: [{ x: plane.x, y: plane.y, widthWorld: cw / unitSize }]
       };
       planeStrokes.push(activePlaneStroke);
@@ -1629,11 +1890,11 @@
       refresh();
     } else if(currentMode === 'draw'){
       let pressure = (window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure : 0.5;
-      const cw = 4 * (pressure * 2);
+      const cw = mainPenSizePx * (window.usePenPressure && e.pointerType === 'pen' ? Math.max(0.25, pressure * 2) : 1);
       const plane = toPlane(mx, my);
 
       if (!activePlaneStroke) {
-        activePlaneStroke = { color: '#1A202C', points: [] };
+        activePlaneStroke = { color: mainDrawColor, points: [] };
         planeStrokes.push(activePlaneStroke);
       }
 
@@ -1688,6 +1949,7 @@
     }
     isDragging = false;
     activePlaneStroke = null;
+    scheduleSaveAppState();
   });
 
   container.addEventListener('wheel', (e) => {
@@ -1710,6 +1972,32 @@
     // mantendo os traços exatamente sobre as coordenadas onde foram desenhados.
     refresh();
   }, { passive: false });
+
+
+  document.getElementById('function-list').addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-fn-action]');if(!btn)return;const id=Number(btn.dataset.id),action=btn.dataset.fnAction,idx=graphedFunctions.findIndex(f=>f.id===id);if(idx<0)return;
+    if(action==='toggle'){graphedFunctions[idx].visible=!graphedFunctions[idx].visible;renderFunctionList();refresh();}
+    else if(action==='select')selectFunction(id);
+    else if(action==='remove'){graphedFunctions.splice(idx,1);if(activeFunctionId===id){if(graphedFunctions.length)selectFunction(graphedFunctions[graphedFunctions.length-1].id,false);else{activeFunctionId=null;mathModel=null;points.length=0;resetFunctionIdentity();updateInputsFromPoints();}}renderFunctionList();refresh();}
+  });
+  document.getElementById('function-history').addEventListener('click',e=>{const btn=e.target.closest('button[data-history-index]');if(!btn)return;const h=functionHistory[Number(btn.dataset.historyIndex)];if(!h)return;document.getElementById('eq-input').value=h.input;syncFunctionTypeButtons(h.type);document.getElementById('eq-input').focus();});
+
+  document.querySelectorAll('.main-color-swatch').forEach(btn=>btn.addEventListener('click',()=>{mainDrawColor=btn.dataset.color;document.getElementById('main-draw-color').value=mainDrawColor;document.querySelectorAll('.main-color-swatch').forEach(b=>b.classList.toggle('active',b===btn));currentMode='draw';document.getElementById('mode-draw').click();scheduleSaveAppState();}));
+  document.getElementById('main-draw-color').addEventListener('input',e=>{mainDrawColor=e.target.value;document.querySelectorAll('.main-color-swatch').forEach(b=>b.classList.remove('active'));scheduleSaveAppState();});
+  document.getElementById('main-pen-size').addEventListener('input',e=>{mainPenSizePx=Number(e.target.value);document.getElementById('main-pen-size-label').textContent=mainPenSizePx+'px';updatePlaneCursor();scheduleSaveAppState();});
+  document.getElementById('main-eraser-size').addEventListener('input',e=>{mainEraserRadiusPx=Number(e.target.value);document.getElementById('main-eraser-size-label').textContent=mainEraserRadiusPx+'px';updatePlaneCursor();scheduleSaveAppState();});
+
+  document.getElementById('zoom-in-btn').addEventListener('click',()=>zoomPlane(1.25));
+  document.getElementById('zoom-out-btn').addEventListener('click',()=>zoomPlane(0.8));
+  document.getElementById('center-plane-btn').addEventListener('click',centerPlane);
+  document.getElementById('export-plane-btn').addEventListener('click',exportMainPlane);
+  document.getElementById('exam-mode-toggle').addEventListener('click',()=>setExamMode(!examMode));
+  const helpModal=document.getElementById('help-modal');
+  const openHelp=()=>helpModal.classList.add('open'),closeHelp=()=>helpModal.classList.remove('open');
+  document.getElementById('help-btn').addEventListener('click',openHelp);document.getElementById('help-close-btn').addEventListener('click',closeHelp);helpModal.addEventListener('click',e=>{if(e.target===helpModal)closeHelp();});
+
+  container.addEventListener('pointermove',e=>{const p=getPlanePointerPosition(e),plane=toPlane(p.x,p.y);const el=document.getElementById('coord-indicator');if(el)el.textContent=`${currentVariable||'x'}: ${formatNumber(plane.x)} · y: ${formatNumber(plane.y)}`;});
+  container.addEventListener('pointerleave',()=>{const el=document.getElementById('coord-indicator');if(el)el.textContent=`${currentVariable||'x'}: — · y: —`;});
 
   document.querySelectorAll('#mode-point, #mode-pan, #mode-draw, #mode-erase').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1738,6 +2026,25 @@
       e.preventDefault();
       undoPlaneDrawing();
     }
+  });
+
+
+  window.addEventListener('keydown', e => {
+    const target=e.target;const typing=target&&(target.tagName==='INPUT'||target.tagName==='TEXTAREA'||target.isContentEditable);const scratchOpen=document.getElementById('draw-drawer').classList.contains('open');
+    if(typing||scratchOpen)return;
+    const k=e.key.toLowerCase();
+    if((e.ctrlKey||e.metaKey)&&k==='e'){e.preventDefault();exportMainPlane();return;}
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    if(k==='m')document.getElementById('mode-point').click();
+    else if(k==='v')document.getElementById('mode-pan').click();
+    else if(k==='d')document.getElementById('mode-draw').click();
+    else if(k==='e')document.getElementById('mode-erase').click();
+    else if(k==='+'||k==='=')zoomPlane(1.25);
+    else if(k==='-')zoomPlane(.8);
+    else if(k==='0')centerPlane();
+    else if(k==='p')setExamMode(!examMode);
+    else if(k==='?'||k==='/')openHelp();
+    else if(k==='escape')closeHelp();
   });
 
   // Apaga somente os traços feitos sobre o plano. Pontos, reta/parábola, domínio
@@ -1780,21 +2087,29 @@
     }
 
     updateInputsFromPoints();
+    let pointModel = mathModel;
+    if (!pointModel && points.length === 2) {
+      const dx = points[1].x - points[0].x;
+      if (Math.abs(dx) > 1e-9) pointModel = { type:'linear', m:(points[1].y-points[0].y)/dx, b:points[0].y-((points[1].y-points[0].y)/dx)*points[0].x };
+    }
+    if (pointModel) {
+      mathModel = pointModel; currentVariable='x'; currentFunctionName=null;
+      const series={id:++functionIdCounter,input:'Definida por pontos',model:{...pointModel},variable:'x',functionName:null,color:FUNCTION_COLORS[(functionIdCounter-1)%FUNCTION_COLORS.length],visible:true,domainMin:domMinInput.value===''?null:Number(domMinInput.value),domainMax:domMaxInput.value===''?null:Number(domMaxInput.value)};
+      graphedFunctions.push(series);activeFunctionId=series.id;renderFunctionList();
+    }
     refresh();
   });
   document.getElementById('clear-btn').addEventListener('click', () => {
-    resetFunctionIdentity();
-    points.length = 0;
-    mathModel = null;
-    document.getElementById('eq-input').value = '';
-    eqError.style.display = 'none';
-    eqError.textContent = 'Equação inválida. Verifique o formato.';
-    updateInputsFromPoints();
-    refresh();
+    points.length = 0; mathModel = null; graphedFunctions.length = 0; activeFunctionId = null;
+    document.getElementById('eq-input').value = ''; eqError.style.display = 'none'; eqError.textContent = 'Equação inválida. Verifique o formato e use apenas uma variável.';
+    resetFunctionIdentity(); updateInputsFromPoints(); renderFunctionList(); refresh();
   });
 
   updateFunctionIdentityUI();
   window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('app-state-change', scheduleSaveAppState);
+  window.addEventListener('beforeunload', saveAppStateNow);
+  restoreAppState();
   resizeCanvas();
 })();
 </script>
@@ -1837,12 +2152,69 @@
   // Limita a densidade do canvas do rascunho para manter boa performance
   // mesmo com uma folha muito alta.
   let dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 1.25);
-  let isOpen = false, history = [], tool = 'pen', currentColor = '#1A202C', currentSize = 4, drawing = false, lastX=0, lastY=0;
+  const SCRATCH_STORAGE_KEY = 'plano-cartesiano-rascunho-v2';
+  let scratchSaveTimer = null;
+  let pendingScratchBitmap = null;
+  let pendingScratchGraphs = [];
+  let pendingScratchPrints = [];
+  let scratchContentRestored = false;
+  let restoringScratch = false;
+  let isOpen = false, history = [], tool = 'pen', currentColor = '#1A202C', currentPenSize = 4, currentEraserSize = 18, drawing = false, lastX=0, lastY=0;
 
   // Estabilização do traço: 0 = direto, 90 = bastante suave.
   let currentStability = 55;
   let filteredX = 0, filteredY = 0;
   let previousMidX = 0, previousMidY = 0;
+
+
+  function getScratchBitmapData(){
+    if (!canvas.width || !canvas.height || drawingUsedHeight <= 1) return null;
+    const usedCssHeight=Math.max(1,Math.min(canvas.clientHeight,Math.ceil(drawingUsedHeight+100)));
+    const usedRawHeight=Math.max(1,Math.min(canvas.height,Math.ceil(usedCssHeight*dpr)));
+    const snap=document.createElement('canvas');snap.width=canvas.width;snap.height=usedRawHeight;
+    snap.getContext('2d').drawImage(canvas,0,0,canvas.width,usedRawHeight,0,0,canvas.width,usedRawHeight);
+    return {dataUrl:snap.toDataURL('image/png'),usedHeight:drawingUsedHeight};
+  }
+
+  function scratchGraphState(){return scratchGraphs.map(g=>({left:parseFloat(g.wrapper.style.left)||0,top:parseFloat(g.wrapper.style.top)||0,width:parseFloat(g.wrapper.style.width)||340,height:parseFloat(g.wrapper.style.height)||238}));}
+  function scratchPrintState(){return scratchPrints.map(p=>({src:p.img.src,left:p.left,top:p.top,width:p.width,height:p.height}));}
+
+  function saveScratchStateNow(){
+    if(restoringScratch)return;
+    const base={version:2,areaHeight:scratchAreaHeight,color:currentColor,penSize:currentPenSize,eraserSize:currentEraserSize,stability:currentStability,pdfName:scratchPdfNameInput.value,graphs:scratchGraphState(),prints:scratchPrintState(),bitmap:getScratchBitmapData()};
+    try{localStorage.setItem(SCRATCH_STORAGE_KEY,JSON.stringify(base));}
+    catch(err){
+      // Imagens coladas podem ocupar vários MB. Se o limite for atingido,
+      // preserva primeiro desenho/configurações e, em último caso, apenas configurações.
+      try{const reduced={...base,prints:[]};localStorage.setItem(SCRATCH_STORAGE_KEY,JSON.stringify(reduced));showScratchPasteStatus('Autosave: prints grandes não couberam no armazenamento do navegador.');}
+      catch(err2){try{const settings={...base,prints:[],bitmap:null,graphs:[]};localStorage.setItem(SCRATCH_STORAGE_KEY,JSON.stringify(settings));}catch(_){} console.warn('Limite do localStorage do rascunho atingido.',err2);}
+    }
+  }
+  function scheduleScratchSave(){clearTimeout(scratchSaveTimer);scratchSaveTimer=setTimeout(saveScratchStateNow,350);}
+
+  function loadScratchState(){
+    try{const raw=localStorage.getItem(SCRATCH_STORAGE_KEY);if(!raw)return;const st=JSON.parse(raw);if(!st||st.version!==2)return;
+      scratchAreaHeight=Math.max(SCRATCH_INITIAL_HEIGHT,Number(st.areaHeight)||SCRATCH_INITIAL_HEIGHT);currentColor=st.color||currentColor;currentPenSize=Number(st.penSize)||4;currentEraserSize=Number(st.eraserSize)||18;currentStability=Number(st.stability)||55;
+      pendingScratchBitmap=st.bitmap||null;pendingScratchGraphs=Array.isArray(st.graphs)?st.graphs:[];pendingScratchPrints=Array.isArray(st.prints)?st.prints:[];
+      if(st.pdfName)scratchPdfNameInput.value=st.pdfName;
+      document.getElementById('custom-color').value=currentColor;document.getElementById('scratch-pen-size').value=currentPenSize;document.getElementById('scratch-pen-size-label').textContent=currentPenSize+'px';document.getElementById('scratch-eraser-size').value=currentEraserSize;document.getElementById('scratch-eraser-size-label').textContent=currentEraserSize+'px';document.getElementById('stroke-stability').value=currentStability;document.getElementById('stroke-stability-label').textContent=currentStability+'%';
+      document.querySelectorAll('.draw-toolbar .swatch').forEach(sw=>sw.classList.toggle('active',(sw.dataset.color||'').toLowerCase()===currentColor.toLowerCase()));
+    }catch(err){console.warn('Não foi possível restaurar o rascunho.',err);}
+  }
+
+  function restoreScratchContent(){
+    if(scratchContentRestored)return;scratchContentRestored=true;restoringScratch=true;
+    const finish=()=>{restoringScratch=false;scheduleScratchSave();};
+    const restoreExtras=()=>{
+      const originalSize=scratchGraphSize.value;
+      pendingScratchGraphs.forEach(g=>{scratchGraphSize.value=Math.round(g.width||340);const wrapRect=canvas.parentElement.getBoundingClientRect();createScratchGraphAt(wrapRect.left+(g.left||0)+(g.width||340)/2,wrapRect.top+(g.top||0)+(g.height||238)/2);});
+      scratchGraphSize.value=originalSize;getScratchGraphDimensions();
+      pendingScratchPrints.forEach(pr=>createScratchPrintFromDataUrl(pr.src,pr));
+      pendingScratchGraphs=[];pendingScratchPrints=[];
+    };
+    if(pendingScratchBitmap&&pendingScratchBitmap.dataUrl){const img=new Image();img.onload=()=>{ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(img,0,0);ctx.restore();ctx.setTransform(dpr,0,0,dpr,0,0);drawingUsedHeight=Number(pendingScratchBitmap.usedHeight)||1;pendingScratchBitmap=null;restoreExtras();setTimeout(finish,0);};img.onerror=()=>{restoreExtras();finish();};img.src=pendingScratchBitmap.dataUrl;}
+    else {restoreExtras();setTimeout(finish,0);}
+  }
 
   function setScratchGraphPlacementMode(enabled){
     placingScratchGraph = enabled;
@@ -1981,6 +2353,7 @@
 
     scratchGraphs.push(graph);
     requestAnimationFrame(() => drawOneScratchGraph(graph));
+    if (!restoringScratch) scheduleScratchSave();
   }
 
   function beginScratchGraphPlacement(){
@@ -1995,10 +2368,12 @@
     const graph = scratchGraphs.pop();
     if (graph) graph.wrapper.remove();
     setScratchGraphPlacementMode(false);
+    scheduleScratchSave();
   });
 
   scratchGraphSize.addEventListener('input', () => {
     getScratchGraphDimensions();
+    scheduleScratchSave();
   });
 
   window.addEventListener('keydown', (e) => {
@@ -2041,6 +2416,7 @@
     scratchPrints.splice(index, 1);
 
     showScratchPasteStatus('Print removido.');
+    scheduleScratchSave();
   }
 
   function removeAllScratchPrints(){
@@ -2052,6 +2428,7 @@
 
     scratchPrints.length = 0;
     showScratchPasteStatus('Todos os prints foram removidos.');
+    scheduleScratchSave();
   }
 
   function enableScratchPrintDragging(print){
@@ -2075,6 +2452,7 @@
       activePointerId = null;
       handle.classList.remove('active');
       showScratchPasteStatus('Print reposicionado.');
+      scheduleScratchSave();
     };
 
     handle.addEventListener('pointerdown', (event) => {
@@ -2141,7 +2519,7 @@
     return { left, top };
   }
 
-  function createScratchPrintFromDataUrl(dataUrl){
+  function createScratchPrintFromDataUrl(dataUrl, savedState=null){
     const sourceImage = new Image();
 
     sourceImage.onload = () => {
@@ -2156,9 +2534,11 @@
         maxHeight / sourceImage.naturalHeight
       );
 
-      const width = Math.max(80, Math.round(sourceImage.naturalWidth * scale));
-      const height = Math.max(60, Math.round(sourceImage.naturalHeight * scale));
-      const { left, top } = getScratchPrintPlacement(width, height);
+      const width = savedState ? Math.max(80, Number(savedState.width)||80) : Math.max(80, Math.round(sourceImage.naturalWidth * scale));
+      const height = savedState ? Math.max(60, Number(savedState.height)||60) : Math.max(60, Math.round(sourceImage.naturalHeight * scale));
+      const placement = savedState ? { left:Number(savedState.left)||0, top:Number(savedState.top)||0 } : getScratchPrintPlacement(width, height);
+      const left = Math.max(0, Math.min(Math.max(0, wrap.clientWidth-width), placement.left));
+      const top = Math.max(0, Math.min(Math.max(0, wrap.clientHeight-height), placement.top));
 
       const img = document.createElement('img');
       img.className = 'scratch-print';
@@ -2212,6 +2592,7 @@
       updateScratchPrintControl(print);
 
       showScratchPasteStatus('Print colado. Arraste pelo ✥ para mover ou use ✕ para apagar.');
+      if (!restoringScratch) scheduleScratchSave();
     };
 
     sourceImage.onerror = () => {
@@ -2354,6 +2735,7 @@
 
     requestAnimationFrame(() => {
       applyScratchAreaHeight(scratchAreaHeight);
+      restoreScratchContent();
       maybeGrowScratchArea();
     });
   });
@@ -2998,7 +3380,7 @@
 
   function updateBrushCursor() {
     if (tool === 'eraser') {
-      const s = currentSize * 1.6; 
+      const s = currentEraserSize; 
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${(s/2)-1}" fill="none" stroke="black" stroke-width="1"/></svg>`;
       canvas.style.cursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${s/2} ${s/2}, auto`;
     } else {
@@ -3023,10 +3405,10 @@
     drawing = true;
 
     const p = getPos(e);
-    drawingUsedHeight = Math.max(drawingUsedHeight, p.y + currentSize * 3);
+    drawingUsedHeight = Math.max(drawingUsedHeight, p.y + (tool === 'eraser' ? currentEraserSize : currentPenSize) * 3);
     resetStrokeStabilizer(p.x, p.y);
 
-    let pWidth = (tool === 'eraser' ? currentSize * 1.6 : currentSize) *
+    let pWidth = (tool === 'eraser' ? currentEraserSize : currentPenSize) *
       ((window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure * 2 : 1);
 
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
@@ -3041,10 +3423,10 @@
     if (e.pointerType !== 'mouse') e.preventDefault();
 
     const p = getPos(e);
-    drawingUsedHeight = Math.max(drawingUsedHeight, p.y + currentSize * 3);
+    drawingUsedHeight = Math.max(drawingUsedHeight, p.y + (tool === 'eraser' ? currentEraserSize : currentPenSize) * 3);
     const smooth = getStabilizedPoint(p.x, p.y);
 
-    let pWidth = (tool === 'eraser' ? currentSize * 1.6 : currentSize) *
+    let pWidth = (tool === 'eraser' ? currentEraserSize : currentPenSize) *
       ((window.usePenPressure && e.pointerType === 'pen' && e.pressure) ? e.pressure * 2 : 1);
 
     ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
@@ -3072,40 +3454,45 @@
     lastY = smooth.y;
   });
 
-  window.addEventListener('pointerup', () => drawing = false);
-  window.addEventListener('pointercancel', () => drawing = false);
+  window.addEventListener('pointerup', () => { if(drawing) scheduleScratchSave(); drawing = false; });
+  window.addEventListener('pointercancel', () => { if(drawing) scheduleScratchSave(); drawing = false; });
 
   document.querySelectorAll('.swatch').forEach(sw => {
     sw.addEventListener('click', () => { 
       document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); sw.classList.add('active'); 
       currentColor=sw.dataset.color; document.getElementById('custom-color').value=currentColor; 
-      tool='pen'; document.getElementById('tool-pen').click();
+      tool='pen'; document.getElementById('tool-pen').click(); scheduleScratchSave();
     });
   });
-  document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; document.getElementById('tool-pen').click(); });
-  document.getElementById('brush-size').addEventListener('input', (e) => {
-    currentSize = parseInt(e.target.value);
-    document.getElementById('brush-size-label').textContent = currentSize + 'px';
-    updateBrushCursor();
+  document.getElementById('custom-color').addEventListener('input', (e) => { currentColor=e.target.value; tool='pen'; document.getElementById('tool-pen').click(); scheduleScratchSave(); });
+  document.getElementById('scratch-pen-size').addEventListener('input', (e) => {
+    currentPenSize = parseInt(e.target.value);
+    document.getElementById('scratch-pen-size-label').textContent = currentPenSize + 'px';
+    updateBrushCursor(); scheduleScratchSave();
+  });
+  document.getElementById('scratch-eraser-size').addEventListener('input', (e) => {
+    currentEraserSize = parseInt(e.target.value);
+    document.getElementById('scratch-eraser-size-label').textContent = currentEraserSize + 'px';
+    updateBrushCursor(); scheduleScratchSave();
   });
 
   document.getElementById('stroke-stability').addEventListener('input', (e) => {
     currentStability = parseInt(e.target.value);
-    document.getElementById('stroke-stability-label').textContent = currentStability + '%';
+    document.getElementById('stroke-stability-label').textContent = currentStability + '%'; scheduleScratchSave();
   });
   
   document.getElementById('tool-pen').addEventListener('click', (e) => {
     tool = 'pen';
     e.target.classList.add('active');
     document.getElementById('tool-eraser').classList.remove('active');
-    updateBrushCursor();
+    updateBrushCursor(); scheduleScratchSave();
   });
 
   document.getElementById('tool-eraser').addEventListener('click', (e) => {
     tool = 'eraser';
     e.target.classList.add('active');
     document.getElementById('tool-pen').classList.remove('active');
-    updateBrushCursor();
+    updateBrushCursor(); scheduleScratchSave();
   });
 
   document.getElementById('draw-undo').addEventListener('click', () => {
@@ -3126,6 +3513,7 @@
       ctx.lineJoin = 'round';
 
       drawingUsedHeight = state.usedHeight || 1;
+      scheduleScratchSave();
     };
 
     img.src = state.dataUrl;
@@ -3135,7 +3523,12 @@
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     drawingUsedHeight = 1;
     removeAllScratchPrints();
+    scheduleScratchSave();
   });
+
+  scratchPdfNameInput.addEventListener('input', scheduleScratchSave);
+  window.addEventListener('beforeunload', saveScratchStateNow);
+  loadScratchState();
 })();
 </script>
 </body>
