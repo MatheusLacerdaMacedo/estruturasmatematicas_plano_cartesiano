@@ -574,6 +574,92 @@
   .empty-mini{ color:var(--ink-soft); font-size:.76rem; padding:8px 0; }
   .intersection-list{ margin-top:10px; font-size:.74rem; line-height:1.65; color:var(--ink-soft); }
 
+
+  /* ---------- LAYOUT MINIMALISTA ---------- */
+  .minimal-panel-bar{ display:none; }
+
+  body.minimal-layout header{
+    padding:8px 16px; gap:12px; min-height:52px;
+  }
+  body.minimal-layout header .eyebrow,
+  body.minimal-layout header .brand-copy > p:last-child{ display:none; }
+  body.minimal-layout header h1{ font-size:1.08rem; margin:0; white-space:nowrap; }
+  body.minimal-layout .header-actions{ gap:6px; }
+  body.minimal-layout .header-actions button{ padding:7px 10px; font-size:.74rem; }
+  body.minimal-layout .minimal-header-secondary{ display:none; }
+
+  body.minimal-layout main{ grid-template-columns:minmax(0,1fr) 300px; }
+  body.minimal-layout.minimal-expanded main{ grid-template-columns:minmax(0,1fr) minmax(330px,390px); }
+  body.minimal-layout .panel{ padding:12px 12px 60px; }
+  body.minimal-layout .panel .block{ margin-bottom:13px; }
+  body.minimal-layout .panel h2{ font-size:.76rem; margin-bottom:8px; padding-bottom:5px; }
+  body.minimal-layout .interaction-tools{ margin-bottom:8px; padding:4px; }
+  body.minimal-layout .interaction-tools button{ padding:6px 3px; font-size:.69rem; }
+  body.minimal-layout .coord-inputs input{ padding:6px; }
+  body.minimal-layout .minimal-panel-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    position:sticky; top:0; z-index:8; margin:-12px -12px 12px; padding:8px 12px;
+    background:color-mix(in srgb, var(--paper) 96%, transparent); border-bottom:1px solid var(--paper-line);
+    backdrop-filter:blur(8px);
+  }
+  body.minimal-layout .minimal-panel-bar span{
+    color:var(--ink-soft); font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700;
+  }
+  body.minimal-layout #minimal-more-toggle{ padding:5px 8px; font-size:.68rem; }
+  body.minimal-layout .minimal-advanced,
+  body.minimal-layout .minimal-advanced-flex,
+  body.minimal-layout .minimal-advanced-block,
+  body.minimal-layout .main-draw-settings,
+  body.minimal-layout .minimal-floating-advanced{ display:none !important; }
+  body.minimal-layout.minimal-expanded .minimal-advanced{ display:block !important; }
+  body.minimal-layout.minimal-expanded .minimal-advanced-flex{ display:flex !important; }
+  body.minimal-layout.minimal-expanded .minimal-advanced-block{ display:block !important; }
+  body.minimal-layout .exam-mode-message{ display:none !important; }
+  body.minimal-layout.minimal-expanded.exam-mode .exam-mode-message{ display:block !important; }
+  body.minimal-layout.minimal-expanded .main-draw-settings{ display:grid !important; }
+  body.minimal-layout.minimal-expanded .minimal-floating-advanced{ display:inline-block !important; }
+  body.minimal-layout.minimal-expanded .minimal-header-secondary{ display:inline-block; }
+  body.minimal-layout #functions-manager-section .function-item{ padding:6px 7px; gap:6px; }
+  body.minimal-layout #functions-manager-section .function-actions button{ padding:3px 5px; }
+  body.minimal-layout .plane-floating-controls{ padding:4px; gap:4px; }
+  body.minimal-layout .plane-floating-controls button{ padding:6px 8px; }
+
+  @media (max-width:880px){
+    body.minimal-layout main, body.minimal-layout.minimal-expanded main{ display:block; }
+    body.minimal-layout .panel{ padding-top:12px; }
+  }
+  @media (max-width:700px){
+    body.minimal-layout header{ padding:8px 10px; flex-direction:row; align-items:center; }
+    body.minimal-layout header h1{ font-size:.95rem; }
+    body.minimal-layout .header-actions{ margin-left:auto; }
+    body.minimal-layout #theme-toggle{ display:none; }
+    body.minimal-layout.minimal-expanded #theme-toggle{ display:inline-block; }
+    body.minimal-layout .header-actions button{ padding:6px 8px; }
+  }
+
+
+  /* ---------- VERSÃO E CRÉDITOS DO PROJETO ---------- */
+  .project-meta{
+    position:absolute; right:14px; bottom:14px; z-index:20;
+    display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+    max-width:calc(100% - 28px); padding:6px 9px;
+    border:1px solid var(--paper-line); border-radius:8px;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    color:var(--ink-soft); font-size:.66rem; line-height:1.2;
+    box-shadow:0 3px 12px rgba(0,0,0,.08); backdrop-filter:blur(6px);
+  }
+  .project-version{
+    color:var(--ink); font-weight:700; white-space:nowrap;
+  }
+  .project-author{ white-space:nowrap; }
+  .project-meta a{
+    color:var(--pencil-dark); text-decoration:none; font-weight:700;
+    border-left:1px solid var(--paper-line); padding-left:7px;
+  }
+  .project-meta a:hover{ text-decoration:underline; }
+  body.minimal-layout .project-meta{ padding:5px 7px; gap:6px; font-size:.61rem; }
+  body.minimal-layout .project-author-prefix{ display:none; }
+
   .help-modal{
     position:fixed; inset:0; z-index:300; display:none; place-items:center;
     padding:20px; background:rgba(0,0,0,.45);
@@ -592,6 +678,8 @@
   @media (max-width:700px){
     .plane-floating-controls{ top:8px; left:8px; max-width:calc(100% - 16px); }
     .coord-indicator{ left:8px; bottom:70px; }
+    .project-meta{ right:8px; bottom:70px; max-width:calc(55% - 8px); justify-content:flex-end; }
+    .project-author-prefix{ display:none; }
     .help-grid{ grid-template-columns:1fr; }
     .header-actions{ flex-wrap:wrap; }
   }
@@ -601,14 +689,15 @@
 <body>
 
 <header>
-  <div>
+  <div class="brand-copy">
     <p class="eyebrow">Ferramenta de Estudo Avançada</p>
     <h1>Plano Cartesiano — Funções</h1>
     <p>Estude funções do 1º e 2º grau. Marque pontos, controle o domínio e analise tabelas de valores instantâneas.</p>
   </div>
   <div class="header-actions">
-    <button id="exam-mode-toggle" class="secondary" title="Alternar entre modo estudo e modo prova">🎓 Modo Estudo</button>
-    <button id="help-btn" class="secondary" title="Ajuda e atalhos">❔ Ajuda</button>
+    <button id="minimal-layout-toggle" class="secondary" title="Alternar layout minimalista (L)">▣ Minimalista</button>
+    <button id="exam-mode-toggle" class="secondary minimal-header-secondary" title="Alternar entre modo estudo e modo prova">🎓 Modo Estudo</button>
+    <button id="help-btn" class="secondary minimal-header-secondary" title="Ajuda e atalhos">❔ Ajuda</button>
     <button id="theme-toggle" class="secondary">🌙 Escuro</button>
     <button id="open-draw-btn">✎ Rascunho Livre</button>
   </div>
@@ -624,14 +713,26 @@
       <button id="zoom-out-btn" class="secondary" title="Diminuir zoom (-)">−</button>
       <button id="center-plane-btn" class="secondary" title="Centralizar plano (0)">⌖ Centralizar</button>
       <button id="zoom-in-btn" class="secondary" title="Aumentar zoom (+)">＋</button>
-      <button id="export-plane-btn" class="secondary" title="Exportar plano (Ctrl+E)">⇩ Exportar</button>
+      <button id="export-plane-btn" class="secondary minimal-floating-advanced" title="Exportar plano (Ctrl+E)">⇩ Exportar</button>
     </div>
     <div id="coord-indicator" class="coord-indicator">x: 0,00 · y: 0,00</div>
     <div class="exam-plane-badge">MODO PROVA</div>
+
+    <div class="project-meta" aria-label="Versão e créditos do projeto">
+      <span class="project-version">v1.2.1</span>
+      <span class="project-author"><span class="project-author-prefix">Desenvolvido por </span>Matheus</span>
+      <!-- Substitua pelos URLs dos seus perfis pessoais quando desejar. -->
+      <a href="https://www.linkedin.com/in/matheus-lacerda-macedo/" target="_blank" rel="noopener noreferrer" title="LinkedIn do autor">LinkedIn</a>
+      <a href="https://github.com/MatheusLacerdaMacedo" target="_blank" rel="noopener noreferrer" title="GitHub do autor">GitHub</a>
+    </div>
   </div>
 
   <div class="panel">
     <div class="panel-drag-handle" id="mobile-drag"></div>
+    <div class="minimal-panel-bar">
+      <span>Controles essenciais</span>
+      <button id="minimal-more-toggle" class="secondary" title="Mostrar ou ocultar opções avançadas">⚙ Mais opções</button>
+    </div>
     
     <div class="block" id="function-type-section">
       <h2>Tipo de Função</h2>
@@ -641,7 +742,7 @@
       </div>
     </div>
 
-    <div class="block">
+    <div class="block" id="interaction-section">
       <h2>Interação do Gráfico</h2>
       <div class="interaction-tools">
         <button id="mode-point" class="active">📍 Marcar</button>
@@ -649,11 +750,11 @@
         <button id="mode-draw">✎ Desenhar</button>
         <button id="mode-erase">◯ Borracha</button>
       </div>
-      <div class="btn-row" style="margin-top:-6px; margin-bottom:14px;">
+      <div class="btn-row minimal-advanced-flex" style="margin-top:-6px; margin-bottom:14px;">
         <button id="undo-plane-drawing" class="secondary" style="flex:1;">↺ Desfazer (Ctrl+Z)</button>
         <button id="clear-plane-drawing" class="secondary" style="flex:1;">🧹 Apagar desenho</button>
       </div>
-      <div class="interaction-tools" style="margin-bottom: 12px;">
+      <div class="interaction-tools minimal-advanced-flex" style="margin-bottom: 12px;">
         <button class="input-toggle active" data-val="mouse">🖱 Mouse</button>
         <button class="input-toggle" data-val="pen">🖊 Mesa Digitalizadora</button>
       </div>
@@ -682,10 +783,10 @@
         <input type="text" id="eq-input" placeholder="ex: L(t) = -50t + 7t - 5" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
       <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato e use apenas uma variável.</div>
-      <p class="hint" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z e frações.</p>
+      <p class="hint minimal-advanced-block" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z e frações.</p>
       
       <!-- Domínio -->
-      <div class="domain-row">
+      <div class="domain-row minimal-advanced-flex">
         <div class="coord-inputs">
             <label id="domain-min-label">Domínio: x Mín</label>
             <input type="number" id="domain-min" placeholder="-∞">
@@ -704,10 +805,10 @@
     <div class="block" id="functions-manager-section">
       <h2>Funções no Plano</h2>
       <div id="function-list" class="function-list"><div class="empty-mini">Nenhuma função adicionada.</div></div>
-      <div id="intersection-list" class="intersection-list study-answer"></div>
+      <div id="intersection-list" class="intersection-list study-answer minimal-advanced-block"></div>
     </div>
 
-    <div class="block">
+    <div class="block minimal-advanced" id="function-history-section">
       <h2>Histórico de Funções</h2>
       <div id="function-history" class="function-history"><div class="empty-mini">O histórico aparecerá aqui.</div></div>
     </div>
@@ -716,7 +817,7 @@
       <div class="empty-state">Modo prova ativo: tabela, análise matemática e marcações automáticas de interseção estão ocultas.</div>
     </div>
 
-    <div class="block" id="points-section">
+    <div class="block minimal-advanced" id="points-section">
       <h2>Definir por Pontos</h2>
       <div class="point-row">
         <span class="point-dot p1"></span>
@@ -746,7 +847,7 @@
       </div>
     </div>
 
-    <div class="block study-answer">
+    <div class="block study-answer minimal-advanced" id="value-table-section">
       <h2>Tabela de Valores</h2>
       <table class="val-table">
         <thead><tr><th id="table-variable-header">x</th><th id="table-value-header">y</th></tr></thead>
@@ -756,7 +857,7 @@
       </table>
     </div>
 
-    <div class="block study-answer">
+    <div class="block study-answer minimal-advanced" id="math-analysis-section">
       <h2>Análise Matemática</h2>
       <div id="equation-area">
         <div class="empty-state">Defina a equação ou os pontos para gerar a análise.</div>
@@ -866,8 +967,9 @@
       <div><span class="help-key">M</span> — Marcar pontos</div><div><span class="help-key">V</span> — Mover plano</div>
       <div><span class="help-key">D</span> — Desenhar</div><div><span class="help-key">E</span> — Borracha</div>
       <div><span class="help-key">+</span> / <span class="help-key">−</span> — Zoom</div><div><span class="help-key">0</span> — Centralizar</div>
-      <div><span class="help-key">P</span> — Estudo / Prova</div><div><span class="help-key">?</span> — Abrir ajuda</div>
-      <div><span class="help-key">Ctrl+Z</span> — Desfazer desenho</div><div><span class="help-key">Ctrl+E</span> — Exportar plano</div>
+      <div><span class="help-key">P</span> — Estudo / Prova</div><div><span class="help-key">L</span> — Layout minimalista</div>
+      <div><span class="help-key">?</span> — Abrir ajuda</div><div><span class="help-key">Ctrl+E</span> — Exportar plano</div>
+      <div><span class="help-key">Ctrl+Z</span> — Desfazer desenho</div><div><span class="help-key">Mais opções</span> — Exibe controles avançados no layout minimalista</div>
     </div>
     <p class="hint"><b>Múltiplas funções:</b> escreva uma função e clique em “Adicionar função”. Use os botões 👁, selecionar e ✕ para gerenciar cada gráfico.</p>
     <p class="hint"><b>Modo prova:</b> oculta tabela, análise e interseções automáticas sem apagar os gráficos.</p>
@@ -942,6 +1044,8 @@
   let mainPenSizePx = 4;
   let mainEraserRadiusPx = 18;
   let examMode = false;
+  let minimalLayout = false;
+  let minimalExpanded = false;
   let appSaveTimer = null;
   let pendingRestoredView = null;
 
@@ -1141,6 +1245,33 @@
     renderIntersections();draw();scheduleSaveAppState();
   }
 
+  function updateMinimalLayoutUI(){
+    document.body.classList.toggle('minimal-layout',minimalLayout);
+    document.body.classList.toggle('minimal-expanded',minimalLayout && minimalExpanded);
+    const toggle=document.getElementById('minimal-layout-toggle');
+    const more=document.getElementById('minimal-more-toggle');
+    if(toggle){
+      toggle.textContent=minimalLayout?'▣ Layout completo':'▣ Minimalista';
+      toggle.title=minimalLayout?'Voltar ao layout completo (L)':'Ativar layout minimalista (L)';
+    }
+    if(more) more.textContent=minimalExpanded?'⚙ Menos opções':'⚙ Mais opções';
+    requestAnimationFrame(()=>{ resizeCanvas(); });
+  }
+
+  function setMinimalLayout(enabled, save=true){
+    minimalLayout=!!enabled;
+    if(!minimalLayout) minimalExpanded=false;
+    updateMinimalLayoutUI();
+    if(save) scheduleSaveAppState();
+  }
+
+  function toggleMinimalMore(){
+    if(!minimalLayout) return;
+    minimalExpanded=!minimalExpanded;
+    updateMinimalLayoutUI();
+    scheduleSaveAppState();
+  }
+
   function exportMainPlane(){
     if(!cssWidth||!cssHeight)return;
     const scale=2,legend=graphedFunctions.filter(f=>f.visible),legendHeight=Math.max(58,30+legend.length*22);
@@ -1156,7 +1287,7 @@
 
   function serializableFunctions(){return graphedFunctions.map(f=>({id:f.id,input:f.input,model:f.model,variable:f.variable,functionName:f.functionName,color:f.color,visible:f.visible,domainMin:f.domainMin,domainMax:f.domainMax}));}
   function saveAppStateNow(){
-    const state={version:2,functions:serializableFunctions(),history:functionHistory,activeFunctionId,view:{unitSize,mathCenterX,mathCenterY},planeStrokes:clonePlaneStrokes(),mainDrawColor,mainPenSizePx,mainEraserRadiusPx,examMode,theme:document.body.classList.contains('dark-theme')?'dark':'light',funcType,currentVariable,currentFunctionName,domainMin:domMinInput.value,domainMax:domMaxInput.value};
+    const state={version:2,functions:serializableFunctions(),history:functionHistory,activeFunctionId,view:{unitSize,mathCenterX,mathCenterY},planeStrokes:clonePlaneStrokes(),mainDrawColor,mainPenSizePx,mainEraserRadiusPx,examMode,minimalLayout,minimalExpanded,theme:document.body.classList.contains('dark-theme')?'dark':'light',funcType,currentVariable,currentFunctionName,domainMin:domMinInput.value,domainMax:domMaxInput.value};
     try{localStorage.setItem(APP_STORAGE_KEY,JSON.stringify(state));}
     catch(err){
       // Se muitos traços excederem a cota, preserva funções, histórico e configurações.
@@ -1174,7 +1305,7 @@
       if(st.theme==='dark')document.body.classList.add('dark-theme');else document.body.classList.remove('dark-theme');themeBtn.textContent=document.body.classList.contains('dark-theme')?'☀️ Claro':'🌙 Escuro';
       document.getElementById('main-draw-color').value=mainDrawColor;document.getElementById('main-pen-size').value=mainPenSizePx;document.getElementById('main-pen-size-label').textContent=mainPenSizePx+'px';document.getElementById('main-eraser-size').value=mainEraserRadiusPx;document.getElementById('main-eraser-size-label').textContent=mainEraserRadiusPx+'px';
       document.querySelectorAll('.main-color-swatch').forEach(b=>b.classList.toggle('active',b.dataset.color.toLowerCase()===mainDrawColor.toLowerCase()));
-      domMinInput.value=st.domainMin||'';domMaxInput.value=st.domainMax||'';setExamMode(!!st.examMode);
+      domMinInput.value=st.domainMin||'';domMaxInput.value=st.domainMax||'';setExamMode(!!st.examMode);minimalExpanded=!!st.minimalExpanded;setMinimalLayout(!!st.minimalLayout,false);
       if(activeFunctionId&&graphedFunctions.some(f=>f.id===activeFunctionId))selectFunction(activeFunctionId,false);else if(graphedFunctions.length)selectFunction(graphedFunctions[graphedFunctions.length-1].id,false);
       else {currentVariable=st.currentVariable||'x';currentFunctionName=st.currentFunctionName||null;syncFunctionTypeButtons(st.funcType||'linear');updateFunctionIdentityUI();}
       renderFunctionHistory();renderFunctionList();
@@ -1992,6 +2123,8 @@
   document.getElementById('center-plane-btn').addEventListener('click',centerPlane);
   document.getElementById('export-plane-btn').addEventListener('click',exportMainPlane);
   document.getElementById('exam-mode-toggle').addEventListener('click',()=>setExamMode(!examMode));
+  document.getElementById('minimal-layout-toggle').addEventListener('click',()=>setMinimalLayout(!minimalLayout));
+  document.getElementById('minimal-more-toggle').addEventListener('click',toggleMinimalMore);
   const helpModal=document.getElementById('help-modal');
   const openHelp=()=>helpModal.classList.add('open'),closeHelp=()=>helpModal.classList.remove('open');
   document.getElementById('help-btn').addEventListener('click',openHelp);document.getElementById('help-close-btn').addEventListener('click',closeHelp);helpModal.addEventListener('click',e=>{if(e.target===helpModal)closeHelp();});
@@ -2043,6 +2176,7 @@
     else if(k==='-')zoomPlane(.8);
     else if(k==='0')centerPlane();
     else if(k==='p')setExamMode(!examMode);
+    else if(k==='l')setMinimalLayout(!minimalLayout);
     else if(k==='?'||k==='/')openHelp();
     else if(k==='escape')closeHelp();
   });
