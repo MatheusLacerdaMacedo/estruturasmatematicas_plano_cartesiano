@@ -75,7 +75,10 @@
     background: var(--blueprint-deep);
     flex-shrink: 0;
     gap: 20px;
-    z-index: 10;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
   
   @media (max-width: 700px){
@@ -274,7 +277,15 @@
     overflow-x: hidden;
   }
   .draw-drawer.open{ transform: translateY(0); }
-  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; gap: 18px; }
+  .draw-sticky-top{
+    position: sticky;
+    top: 0;
+    z-index: 130;
+    flex-shrink: 0;
+    background: var(--paper);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+  }
+  .draw-header{ display:flex; align-items:center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; gap: 18px; background:var(--paper); }
   .draw-header h2{ font-family:'Space Grotesk', sans-serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; color: var(--ink-soft); }
   .draw-header-actions{
     display:flex;
@@ -324,7 +335,7 @@
     cursor: wait;
     pointer-events: none;
   }
-  .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;}
+  .draw-toolbar{ padding: 14px 32px; border-bottom: 1px solid var(--paper-line); flex-shrink: 0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; background:var(--paper);}
   .tool-row{ display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
   .tool-row .row-label{ font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); width: auto; flex-shrink: 0; }
   .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
@@ -558,20 +569,20 @@
     <div class="block" id="equation-input-section">
       <h2>Escrever Equação</h2>
       <div class="coord-inputs" style="display:flex; width: 100%; align-items: center;">
-        <label for="eq-input" style="font-weight:700; font-size:1.1rem; color:var(--ink);">y = </label>
-        <input type="text" id="eq-input" placeholder="ex: 2x - 3" style="flex:1; font-size:1rem; padding: 8px;">
+        <label for="eq-input" style="font-weight:700; font-size:0.9rem; color:var(--ink);">Função</label>
+        <input type="text" id="eq-input" placeholder="ex: L(t) = -50t + 7t - 5" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
-      <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato.</div>
-      <p class="hint" style="margin-top: 8px;">Escreva no formato <b id="hint-format">mx + b</b> (suporta frações ex: 1/2x).</p>
+      <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato e use apenas uma variável.</div>
+      <p class="hint" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z e frações.</p>
       
       <!-- Domínio -->
       <div class="domain-row">
         <div class="coord-inputs">
-            <label>Domínio: x Mín</label>
+            <label id="domain-min-label">Domínio: x Mín</label>
             <input type="number" id="domain-min" placeholder="-∞">
         </div>
         <div class="coord-inputs">
-            <label>x Máx</label>
+            <label id="domain-max-label">x Máx</label>
             <input type="number" id="domain-max" placeholder="+∞">
         </div>
       </div>
@@ -614,7 +625,7 @@
     <div class="block">
       <h2>Tabela de Valores</h2>
       <table class="val-table">
-        <thead><tr><th>X</th><th>Y</th></tr></thead>
+        <thead><tr><th id="table-variable-header">x</th><th id="table-value-header">y</th></tr></thead>
         <tbody id="table-body">
             <tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>
         </tbody>
@@ -632,6 +643,7 @@
 
 <!-- RASCUNHO LIVRE -->
 <aside id="draw-drawer" class="draw-drawer" aria-hidden="true">
+  <div class="draw-sticky-top">
   <div class="draw-header">
     <h2>Quadro de Rascunho</h2>
     <div class="draw-header-actions">
@@ -703,6 +715,7 @@
       <span id="scratch-paste-status" class="scratch-paste-status" aria-live="polite"></span>
     </div>
   </div>
+  </div>
   <div class="scratch-side-actions" aria-label="Ações do rascunho">
     <button id="draw-undo" class="secondary" title="Desfazer último traço">↺</button>
     <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">🗑</button>
@@ -768,7 +781,9 @@
   const points = []; 
   let currentMode = 'point'; 
   let funcType = 'linear'; // 'linear' ou 'quadratic'
-  let mathModel = null; 
+  let mathModel = null;
+  let currentVariable = 'x';
+  let currentFunctionName = null;
 
   const domMinInput = document.getElementById('domain-min');
   const domMaxInput = document.getElementById('domain-max');
@@ -780,6 +795,30 @@
   const y2Input = document.getElementById('y2');
   const x3Input = document.getElementById('x3');
   const y3Input = document.getElementById('y3');
+
+  function getDependentLabel(){
+    return currentFunctionName ? `${currentFunctionName}(${currentVariable})` : 'y';
+  }
+
+  function updateFunctionIdentityUI(){
+    const variable = currentVariable || 'x';
+    const dependent = getDependentLabel();
+    const minLabel = document.getElementById('domain-min-label');
+    const maxLabel = document.getElementById('domain-max-label');
+    const tableVariable = document.getElementById('table-variable-header');
+    const tableValue = document.getElementById('table-value-header');
+
+    if (minLabel) minLabel.textContent = `Domínio: ${variable} Mín`;
+    if (maxLabel) maxLabel.textContent = `${variable} Máx`;
+    if (tableVariable) tableVariable.textContent = variable;
+    if (tableValue) tableValue.textContent = dependent;
+  }
+
+  function resetFunctionIdentity(){
+    currentVariable = 'x';
+    currentFunctionName = null;
+    updateFunctionIdentityUI();
+  }
 
   // Controle de Funções UI
   document.querySelectorAll('.func-toggle').forEach(btn => {
@@ -794,14 +833,15 @@
         if (funcType === 'linear') {
             document.getElementById('point-row-3').style.display = 'none';
             document.getElementById('points-hint').innerText = 'Marque dois pontos no plano ou informe as coordenadas.';
-            document.getElementById('eq-input').placeholder = 'ex: 2x - 3 ou 1/2x + 1';
-            document.getElementById('hint-format').innerText = 'mx + b';
+            document.getElementById('eq-input').placeholder = 'ex: L(t) = -50t + 7t - 5';
+            document.getElementById('hint-format').innerText = 'f(x) = mx + b';
         } else {
             document.getElementById('point-row-3').style.display = 'flex';
-            document.getElementById('points-hint').innerText = 'Marque três pontos com valores de X diferentes para formar a parábola.';
-            document.getElementById('eq-input').placeholder = 'ex: x² - 4x + 4 ou -x^2+9';
-            document.getElementById('hint-format').innerText = 'ax² + bx + c';
+            document.getElementById('points-hint').innerText = 'Marque três pontos com valores diferentes no eixo horizontal para formar a parábola.';
+            document.getElementById('eq-input').placeholder = 'ex: P(u) = u² - 4u + 4';
+            document.getElementById('hint-format').innerText = 'f(x) = ax² + bx + c';
         }
+        resetFunctionIdentity();
         mathModel = null; points.length = 0;
         eqError.style.display = 'none';
         refresh();
@@ -940,45 +980,132 @@
     return d === 1 ? `${n}` : `${n}/${d}`;
   }
 
-  // ROBUST PARSER
-  function parseEquation(eq, type) {
-    eq = eq.replace(/,/g, '.').replace(/\s+/g, '').toLowerCase().replace('y=', '').replace(/²/g, '^2').replace(/\*\*/g, '^');
-    if (eq === '') return null;
+  // PARSER DE FUNÇÕES COM VARIÁVEL AUTOMÁTICA
+  // Aceita, por exemplo:
+  //   2x - 3
+  //   y = 2x - 3
+  //   L(t) = -50t + 7t - 5
+  //   P(u) = u² - 4u + 4
+  function parseEquation(input, type) {
+    let compact = String(input || '')
+      .replace(/,/g, '.')
+      .replace(/\s+/g, '')
+      .replace(/²/g, '^2')
+      .replace(/\*\*/g, '^');
 
-    let cleanEq = eq.replace(/(?!^)(?<![\^\/\*\+])-/g, '+-'); // Protege sinais de negativos corretamente
-    let terms = cleanEq.split('+').filter(t => t !== '');
-    
-    let a = 0, b = 0, c = 0; let valid = true;
+    if (!compact) return null;
 
-    terms.forEach(term => {
-        let coeff = 1;
-        let hasX2 = term.includes('x^2');
-        let hasX = !hasX2 && term.includes('x');
-        
-        let numStr = term.replace('x^2', '').replace('x', '').replace(/\*/g, '');
-        
-        if (numStr === '') coeff = 1;
-        else if (numStr === '-') coeff = -1;
-        else if (numStr.includes('/')) {
-            let parts = numStr.split('/');
-            coeff = parseFloat(parts[0]) / parseFloat(parts[1]);
-        } else coeff = parseFloat(numStr);
+    let expression = compact;
+    let declaredVariable = null;
+    let variableDisplay = null;
+    let functionName = null;
 
-        if (isNaN(coeff)) valid = false;
+    const equalParts = compact.split('=');
+    if (equalParts.length > 2) return null;
 
-        if (hasX2) a += coeff;
-        else if (hasX) b += coeff;
-        else c += coeff;
-    });
+    if (equalParts.length === 2) {
+      const lhs = equalParts[0];
+      expression = equalParts[1];
+      if (!expression) return null;
 
-    if (!valid) return null;
-    if (type === 'linear') {
-        if (a !== 0) return null; 
-        return { type: 'linear', m: b, b: c };
-    } else {
-        if (a === 0) return { type: 'linear', m: b, b: c }; 
-        return { type: 'quadratic', a, b, c };
+      const fnMatch = lhs.match(/^([A-Za-z][A-Za-z0-9_]*)\(([A-Za-z])\)$/);
+      if (fnMatch) {
+        functionName = fnMatch[1];
+        variableDisplay = fnMatch[2];
+        declaredVariable = fnMatch[2].toLowerCase();
+      } else if (!/^y$/i.test(lhs)) {
+        return null;
+      }
     }
+
+    let normalized = expression.toLowerCase();
+    const letters = normalized.match(/[a-z]/g) || [];
+    const uniqueLetters = [...new Set(letters)];
+
+    let variable = declaredVariable;
+    if (!variable) {
+      if (uniqueLetters.length > 1) return null;
+      variable = uniqueLetters[0] || 'x';
+      variableDisplay = variable;
+    } else if (uniqueLetters.some(letter => letter !== variable)) {
+      return null;
+    }
+
+    // Internamente todo o cálculo continua usando x; somente a interface mantém
+    // a letra escolhida pelo usuário.
+    const escapedVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    normalized = normalized
+      .replace(new RegExp(`${escapedVariable}\\^2`, 'g'), 'x^2')
+      .replace(new RegExp(escapedVariable, 'g'), 'x');
+
+    if (!/^[0-9x+\-*/.^]+$/.test(normalized)) return null;
+
+    // Separa os termos preservando o sinal. Ex.: -50x+7x-5 -> -50x, 7x, -5
+    const cleanEq = normalized.replace(/-/g, '+-').replace(/^\+/, '');
+    const terms = cleanEq.split('+').filter(Boolean);
+    if (!terms.length) return null;
+
+    function parseCoefficient(raw) {
+      const value = raw.replace(/\*/g, '');
+      if (value === '' || value === '+') return 1;
+      if (value === '-') return -1;
+
+      if (value.includes('/')) {
+        const parts = value.split('/');
+        if (parts.length !== 2) return NaN;
+        const numerator = Number(parts[0]);
+        const denominator = Number(parts[1]);
+        if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return NaN;
+        return numerator / denominator;
+      }
+
+      if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) return NaN;
+      return Number(value);
+    }
+
+    let a = 0, b = 0, c = 0;
+
+    for (const term of terms) {
+      let degree = 0;
+      let coefficientText = term;
+
+      if (term.includes('x^2')) {
+        if ((term.match(/x\^2/g) || []).length !== 1) return null;
+        coefficientText = term.replace('x^2', '');
+        if (coefficientText.includes('x') || coefficientText.includes('^')) return null;
+        degree = 2;
+      } else if (term.includes('x')) {
+        if ((term.match(/x/g) || []).length !== 1) return null;
+        coefficientText = term.replace('x', '');
+        if (coefficientText.includes('^')) return null;
+        degree = 1;
+      } else {
+        // Multiplicação entre constantes não faz parte do formato polinomial aceito.
+        if (term.includes('*') || term.includes('^')) return null;
+      }
+
+      const coefficient = parseCoefficient(coefficientText);
+      if (!Number.isFinite(coefficient)) return null;
+
+      if (degree === 2) a += coefficient;
+      else if (degree === 1) b += coefficient;
+      else c += coefficient;
+    }
+
+    const metadata = {
+      variable: variableDisplay || variable,
+      functionName
+    };
+
+    if (type === 'linear') {
+      if (Math.abs(a) > 1e-12) return null;
+      return { type: 'linear', m: b, b: c, ...metadata };
+    }
+
+    if (Math.abs(a) <= 1e-12) {
+      return { type: 'linear', m: b, b: c, ...metadata };
+    }
+    return { type: 'quadratic', a, b, c, ...metadata };
   }
 
   document.getElementById('apply-eq-btn').addEventListener('click', () => {
@@ -993,6 +1120,9 @@
         return;
     }
     document.getElementById('eq-input').style.borderColor = 'var(--paper-line)';
+    currentVariable = parsed.variable || 'x';
+    currentFunctionName = parsed.functionName || null;
+    updateFunctionIdentityUI();
 
     let focusPts = [];
     if (funcType === 'linear' && parsed.type === 'linear') {
@@ -1231,38 +1361,62 @@
 
   function updateEquation(){
     updateTable();
+
+    const variable = currentVariable || 'x';
+    const dependent = getDependentLabel();
+
     if(funcType === 'linear') {
         if(points.length < 2) { equationArea.innerHTML = `<div class="empty-state">Defina a equação ou dois pontos para calcular.</div>`; return; }
         const dx = points[1].x - points[0].x; const dy = points[1].y - points[0].y;
         if(Math.abs(dx) < 1e-9){ equationArea.innerHTML = `<div class="vertical-warning">Reta vertical. Não é função afim.</div>`; return; }
-        const mFrac = fracLabel(dy, dx); const m = dy / dx;
+        const mFrac = fracLabel(dy, dx);
         const bNum = points[0].y * dx - dy * points[0].x; const bDen = dx;
         const bFracExact = fracLabel(bNum, bDen); const bValue = bNum / bDen;
 
-        let eqStr = 'y = ';
-        eqStr += (mFrac === '1') ? 'x' : (mFrac === '-1') ? '-x' : `${mFrac}x`;
+        let eqStr = `${dependent} = `;
+        eqStr += (mFrac === '1') ? variable : (mFrac === '-1') ? `-${variable}` : `${mFrac}${variable}`;
         if(Math.abs(bValue) > 1e-9) eqStr += bValue > 0 ? ` + ${bFracExact}` : ` − ${fracLabel(Math.abs(bNum), bDen)}`;
 
         let rootHtml = '';
-        if (Math.abs(dy) > 1e-9) rootHtml = `<div><b>Raiz (Corte X):</b> (${fracLabel(-bNum, dy)}, 0)</div>`;
-        
-        equationArea.innerHTML = `<div class="equation-box"><div class="eq">${eqStr}</div><div class="sub">m = ${mFrac} &nbsp;·&nbsp; b = ${bValue === 0 ? '0' : bFracExact}</div></div><div class="steps" style="margin-top:14px;"><div><b>Intersecção Y:</b> (0, ${bValue === 0 ? '0' : bFracExact})</div>${rootHtml}</div>`;
-    } 
+        if (Math.abs(dy) > 1e-9) {
+          rootHtml = `<div><b>Raiz:</b> ${variable} = ${fracLabel(-bNum, dy)}</div>`;
+        }
+
+        equationArea.innerHTML =
+          `<div class="equation-box">` +
+            `<div class="eq">${eqStr}</div>` +
+            `<div class="sub">m = ${mFrac} &nbsp;·&nbsp; b = ${bValue === 0 ? '0' : bFracExact}</div>` +
+          `</div>` +
+          `<div class="steps" style="margin-top:14px;">` +
+            `<div><b>Valor quando ${variable} = 0:</b> ${bValue === 0 ? '0' : bFracExact}</div>` +
+            `${rootHtml}` +
+          `</div>`;
+    }
     else if (funcType === 'quadratic') {
         if (!mathModel) { equationArea.innerHTML = `<div class="empty-state">Escreva a equação para calcular.</div>`; return; }
         const { a, b, c } = mathModel;
-        
-        let aStr = a === 1 ? 'x²' : a === -1 ? '-x²' : `${a}x²`;
-        let bStr = b === 0 ? '' : b === 1 ? ' + x' : b === -1 ? ' - x' : b > 0 ? ` + ${b}x` : ` - ${Math.abs(b)}x`;
+
+        let aStr = a === 1 ? `${variable}²` : a === -1 ? `-${variable}²` : `${a}${variable}²`;
+        let bStr = b === 0 ? '' : b === 1 ? ` + ${variable}` : b === -1 ? ` - ${variable}` : b > 0 ? ` + ${b}${variable}` : ` - ${Math.abs(b)}${variable}`;
         let cStr = c === 0 ? '' : c > 0 ? ` + ${c}` : ` - ${Math.abs(c)}`;
-        
+
         const delta = b*b - 4*a*c; const xv = -b / (2*a); const yv = -delta / (4*a);
         let rootHtml = '';
-        if (delta > 0) rootHtml = `<div><b>Raízes (x₁, x₂):</b> ${((-b + Math.sqrt(delta)) / (2*a)).toFixed(2)} e ${((-b - Math.sqrt(delta)) / (2*a)).toFixed(2)}</div>`;
-        else if (delta === 0) rootHtml = `<div><b>Raiz dupla:</b> ${(-b / (2*a)).toFixed(2)}</div>`;
+        if (delta > 0) rootHtml = `<div><b>Raízes (${variable}₁, ${variable}₂):</b> ${((-b + Math.sqrt(delta)) / (2*a)).toFixed(2)} e ${((-b - Math.sqrt(delta)) / (2*a)).toFixed(2)}</div>`;
+        else if (delta === 0) rootHtml = `<div><b>Raiz dupla (${variable}):</b> ${(-b / (2*a)).toFixed(2)}</div>`;
         else rootHtml = `<div><b>Raízes:</b> Não possui (Δ < 0)</div>`;
 
-        equationArea.innerHTML = `<div class="equation-box"><div class="eq">y = ${aStr}${bStr}${cStr}</div><div class="sub">a = ${a}, b = ${b}, c = ${c}</div></div><div class="steps" style="margin-top:14px;"><div><b>Vértice:</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div><div><b>Δ:</b> ${delta}</div>${rootHtml}<div><b>Corte Y:</b> (0, ${c})</div></div>`;
+        equationArea.innerHTML =
+          `<div class="equation-box">` +
+            `<div class="eq">${dependent} = ${aStr}${bStr}${cStr}</div>` +
+            `<div class="sub">a = ${a}, b = ${b}, c = ${c}</div>` +
+          `</div>` +
+          `<div class="steps" style="margin-top:14px;">` +
+            `<div><b>Vértice:</b> (${xv.toFixed(2)}, ${yv.toFixed(2)})</div>` +
+            `<div><b>Δ:</b> ${delta}</div>` +
+            `${rootHtml}` +
+            `<div><b>Valor quando ${variable} = 0:</b> ${c}</div>` +
+          `</div>`;
     }
   }
 
@@ -1507,6 +1661,7 @@
 
           // Depois de completar a função, um novo clique inicia uma nova seleção.
           if (points.length >= maxPoints) {
+            resetFunctionIdentity();
             points.length = 0;
             mathModel = null;
           }
@@ -1596,6 +1751,7 @@
   });
 
   document.getElementById('apply-btn').addEventListener('click', () => {
+    resetFunctionIdentity();
     points.length = 0;
     mathModel = null;
 
@@ -1627,6 +1783,7 @@
     refresh();
   });
   document.getElementById('clear-btn').addEventListener('click', () => {
+    resetFunctionIdentity();
     points.length = 0;
     mathModel = null;
     document.getElementById('eq-input').value = '';
@@ -1636,6 +1793,7 @@
     refresh();
   });
 
+  updateFunctionIdentityUI();
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 })();
