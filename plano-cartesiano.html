@@ -274,12 +274,15 @@
 
     /* Permite rolar o rascunho quando os controles não couberem na tela. */
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
   }
   .draw-drawer.open{ transform: translateY(0); }
   .draw-sticky-top{
     position: sticky;
     top: 0;
+    left: 0;
+    width: 100vw;
+    min-width: 100vw;
     z-index: 130;
     flex-shrink: 0;
     background: var(--paper);
@@ -341,7 +344,7 @@
   .swatch{ width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); cursor: pointer; padding: 0; flex-shrink: 0; }
   .swatch.active{ border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
   #custom-color{ width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0; cursor: pointer; background: none; }
-  #scratch-pen-size, #scratch-eraser-size, #stroke-stability{
+  #scratch-pen-size, #scratch-eraser-size, #scratch-shape-size, #stroke-stability{
     flex: 1;
     accent-color: var(--pencil-dark);
     min-width: 100px;
@@ -349,6 +352,15 @@
   .brush-size-label{ font-size: 0.75rem; color: var(--ink-soft); width: 34px; text-align: right; flex-shrink: 0; }
   .tool-btn{ padding: 7px 12px; font-size: 0.75rem; background: transparent; color: var(--ink); border-color: var(--paper-line); }
   .tool-btn.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .scratch-zoom-controls{ display:flex; align-items:center; gap:6px; }
+  .scratch-zoom-controls button{ min-width:34px; padding:7px 9px; }
+  #scratch-zoom-reset{ min-width:58px; }
+  .scratch-zoom-hint{ font-size:.66rem; color:var(--ink-soft); white-space:nowrap; }
+  .scratch-shape-select{
+    min-width:132px; padding:7px 9px; border:1px solid var(--paper-line);
+    border-radius:var(--radius); background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Mono', monospace; font-size:.72rem; cursor:pointer;
+  }
   .draw-canvas-wrap{
     /* A altura inicial já é grande e o JavaScript aumenta a folha
        automaticamente quando o usuário se aproxima do final. */
@@ -357,6 +369,7 @@
     position: relative;
     overflow: hidden;
     touch-action: none;
+    transform-origin: top left;
     background: repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
                 repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(128,128,128,0.08) 24px),
                 var(--paper);
@@ -486,7 +499,7 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
   }
 
-  .draw-drawer.open + .scratch-side-actions{
+  .draw-drawer.open ~ .scratch-side-actions{
     display: flex;
   }
 
@@ -591,6 +604,110 @@
   .scratch-trig-legend{ font-size:.69rem; color:var(--ink-soft); }
 
 
+  /* ---------- RASCUNHO: BARRA COMPACTA ---------- */
+  .draw-toolbar.compact-toolbar{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:nowrap;
+    overflow:visible;
+    padding:9px 32px;
+  }
+  .scratch-menu{ position:relative; flex:0 0 auto; }
+  .scratch-menu > summary{
+    list-style:none;
+    cursor:pointer;
+    user-select:none;
+    padding:7px 12px;
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    background:var(--blueprint-deep);
+    color:var(--ink);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:.75rem;
+    white-space:nowrap;
+  }
+  .scratch-menu > summary::-webkit-details-marker{ display:none; }
+  .scratch-menu > summary::after{ content:' ▾'; color:var(--ink-soft); font-size:.7rem; }
+  .scratch-menu[open] > summary{ border-color:var(--pencil-dark); }
+  .scratch-menu[open] > summary::after{ content:' ▴'; }
+  .scratch-menu-panel{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;
+    z-index:190;
+    width:min(760px, calc(100vw - 44px));
+    max-height:min(62vh, 520px);
+    overflow:auto;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 14px;
+    padding:14px;
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    background:var(--paper);
+    box-shadow:0 14px 40px rgba(0,0,0,.18);
+  }
+  .scratch-menu:last-of-type .scratch-menu-panel{ left:auto; right:0; width:min(560px, calc(100vw - 44px)); }
+
+  /* Mantém somente o menu Visualização sempre dentro da área visível da barra. */
+  #scratch-menu-view{
+    position:absolute;
+    top:9px;
+    right:32px;
+    z-index:195;
+    margin:0;
+  }
+  #scratch-menu-view > .scratch-menu-panel{
+    left:auto;
+    right:0;
+    width:min(560px, calc(100vw - 44px));
+    max-width:calc(100vw - 44px);
+  }
+  .scratch-menu-panel .tool-row{ margin:0; }
+  .scratch-menu-panel .menu-separator{
+    width:1px; height:30px; background:var(--paper-line); margin:0 2px;
+  }
+  .scratch-menu-panel .menu-wide{ flex-basis:100%; height:0; }
+  .scratch-menu-panel .tool-btn{ white-space:nowrap; }
+  .scratch-menu-panel .row-label{ font-weight:700; }
+
+  .triangle-type-card{ width:min(520px,96vw); }
+  .triangle-type-options{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin:16px 0 8px;
+  }
+  .triangle-type-option{
+    text-align:left;
+    padding:13px 14px;
+    background:var(--blueprint-deep);
+    color:var(--ink);
+    border:1px solid var(--paper-line);
+  }
+  .triangle-type-option:hover{ border-color:var(--pencil-dark); }
+  .triangle-type-option strong{ display:block; margin-bottom:3px; }
+  .triangle-type-option span{ display:block; color:var(--ink-soft); font-size:.7rem; font-weight:500; line-height:1.45; }
+  .triangle-modal-note{ font-size:.73rem; color:var(--ink-soft); line-height:1.55; }
+
+  @media (max-width:700px){
+    .draw-toolbar.compact-toolbar{ padding:8px 12px; gap:6px; overflow-x:auto; }
+    .scratch-menu-panel{ position:fixed; left:10px !important; right:10px !important; top:118px; width:auto !important; max-height:58vh; }
+    #scratch-menu-view{
+      top:8px;
+      right:12px;
+    }
+    #scratch-menu-view > .scratch-menu-panel{
+      max-width:none;
+    }
+    .triangle-type-options{ grid-template-columns:1fr; }
+  }
+
+
   /* ---------- LAYOUT MINIMALISTA ---------- */
   .minimal-panel-bar{ display:none; }
 
@@ -690,6 +807,8 @@
   .help-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 22px; font-size:.8rem; line-height:1.6; }
   .help-key{ font-weight:700; color:var(--pencil-dark); }
   .help-card .btn-row{ justify-content:flex-end; }
+
+  .scratch-side-actions button{width:auto;min-width:72px;height:40px;padding:0 11px;font-size:.72rem;}
 
   @media (max-width:700px){
     .plane-floating-controls{ top:8px; left:8px; max-width:calc(100% - 16px); }
@@ -926,70 +1045,120 @@
       <button id="draw-close" class="secondary">Fechar ✕</button>
     </div>
   </div>
-  <div class="draw-toolbar">
-    <div class="tool-row">
-      <span class="row-label">Entrada</span>
-      <button class="tool-btn active input-toggle" data-val="mouse">🖱 Mouse</button>
-      <button class="tool-btn input-toggle" data-val="pen">🖊 Mesa (Pressão)</button>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Cor</span>
-      <button class="swatch active" style="background:#1A202C" data-color="#1A202C"></button>
-      <button class="swatch" style="background:#E53E3E" data-color="#E53E3E"></button>
-      <button class="swatch" style="background:#E8A33D" data-color="#E8A33D"></button>
-      <button class="swatch" style="background:#3182CE" data-color="#3182CE"></button>
-      <button class="swatch" style="background:#38A169" data-color="#38A169"></button>
-      <input type="color" id="custom-color" value="#1A202C">
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Caneta</span>
-      <input type="range" id="scratch-pen-size" min="1" max="30" value="4">
-      <span class="brush-size-label" id="scratch-pen-size-label">4px</span>
-    </div>
-    <div class="tool-row">
-      <span class="row-label">Borracha</span>
-      <input type="range" id="scratch-eraser-size" min="6" max="70" value="18">
-      <span class="brush-size-label" id="scratch-eraser-size-label" style="width:44px;">18px</span>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Estabilidade</span>
-      <input type="range" id="stroke-stability" min="0" max="90" value="55" step="5">
-      <span class="brush-size-label" id="stroke-stability-label" style="width:48px;">55%</span>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Ferramenta</span>
-      <button id="tool-pen" class="tool-btn active">✎ Caneta</button>
-      <button id="tool-eraser" class="tool-btn">▭ Borracha</button>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Gráfico X/Y</span>
-      <button id="add-scratch-graph" class="tool-btn">＋ Inserir</button>
-      <button id="remove-scratch-graph" class="tool-btn">✕ Remover</button>
-      <span id="scratch-graph-place-hint" class="row-label" style="display:none; color:var(--pencil-dark);">Clique no rascunho para posicionar</span>
-      <span class="row-label">Tamanho</span>
-      <input type="range" id="scratch-graph-size" min="220" max="520" value="340" step="10" style="width:130px;">
-      <span class="brush-size-label" id="scratch-graph-size-label" style="width:58px;">340px</span>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Trigonometria</span>
-      <button id="add-scratch-trig-axis" class="tool-btn" title="Inserir eixos preparados em múltiplos de π">π Eixos</button>
-      <button id="add-scratch-unit-circle" class="tool-btn" title="Inserir círculo trigonométrico">◯ Círculo</button>
-      <button id="add-scratch-angle-table" class="tool-btn" title="Inserir tabela de ângulos notáveis">▦ Ângulos</button>
-      <span class="scratch-trig-legend">desenhe normalmente por cima</span>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
-    <div class="tool-row">
-      <span class="row-label">Prints</span>
-      <span class="scratch-paste-hint">Ctrl+V para colar · ✥ arrasta</span>
-      <button id="remove-all-scratch-prints" class="tool-btn">🗑 Remover prints</button>
-      <span id="scratch-paste-status" class="scratch-paste-status" aria-live="polite"></span>
-    </div>
+  <div class="draw-toolbar compact-toolbar" aria-label="Ferramentas do rascunho">
+    <details class="scratch-menu" id="scratch-menu-draw">
+      <summary>Desenho</summary>
+      <div class="scratch-menu-panel">
+        <div class="tool-row">
+          <span class="row-label">Entrada</span>
+          <button class="tool-btn active input-toggle" data-val="mouse">Mouse</button>
+          <button class="tool-btn input-toggle" data-val="pen">Mesa digitalizadora</button>
+        </div>
+        <div class="menu-separator"></div>
+        <div class="tool-row">
+          <span class="row-label">Ferramenta</span>
+          <button id="tool-pen" class="tool-btn active">Caneta</button>
+          <button id="tool-eraser" class="tool-btn">Borracha</button>
+        </div>
+        <div class="menu-wide"></div>
+        <div class="tool-row">
+          <span class="row-label">Cor</span>
+          <button class="swatch active" style="background:#1A202C" data-color="#1A202C" aria-label="Preto"></button>
+          <button class="swatch" style="background:#E53E3E" data-color="#E53E3E" aria-label="Vermelho"></button>
+          <button class="swatch" style="background:#E8A33D" data-color="#E8A33D" aria-label="Laranja"></button>
+          <button class="swatch" style="background:#3182CE" data-color="#3182CE" aria-label="Azul"></button>
+          <button class="swatch" style="background:#38A169" data-color="#38A169" aria-label="Verde"></button>
+          <input type="color" id="custom-color" value="#1A202C" aria-label="Cor personalizada">
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Caneta</span>
+          <input type="range" id="scratch-pen-size" min="1" max="30" value="4">
+          <span class="brush-size-label" id="scratch-pen-size-label">4px</span>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Borracha</span>
+          <input type="range" id="scratch-eraser-size" min="6" max="70" value="18">
+          <span class="brush-size-label" id="scratch-eraser-size-label" style="width:44px;">18px</span>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Estabilidade</span>
+          <input type="range" id="stroke-stability" min="0" max="90" value="55" step="5">
+          <span class="brush-size-label" id="stroke-stability-label" style="width:48px;">55%</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="scratch-menu" id="scratch-menu-insert">
+      <summary>Inserir</summary>
+      <div class="scratch-menu-panel">
+        <div class="tool-row">
+          <span class="row-label">Gráfico X/Y</span>
+          <button id="add-scratch-graph" class="tool-btn">Inserir</button>
+          <button id="remove-scratch-graph" class="tool-btn">Remover último</button>
+          <span class="row-label">Tamanho</span>
+          <input type="range" id="scratch-graph-size" min="220" max="520" value="340" step="10" style="width:130px;">
+          <span class="brush-size-label" id="scratch-graph-size-label" style="width:58px;">340px</span>
+        </div>
+        <div class="menu-wide"></div>
+        <div class="tool-row">
+          <span class="row-label">Trigonometria</span>
+          <button id="add-scratch-sin-graph" class="tool-btn" title="Inserir gráfico limpo de seno">Seno</button>
+          <button id="add-scratch-cos-graph" class="tool-btn" title="Inserir gráfico limpo de cosseno">Cosseno</button>
+          <button id="add-scratch-tan-graph" class="tool-btn" title="Inserir gráfico limpo de tangente">Tangente</button>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Referências</span>
+          <button id="add-scratch-trig-axis" class="tool-btn">Eixos em π</button>
+          <button id="add-scratch-unit-circle" class="tool-btn">Círculo trig.</button>
+          <button id="add-scratch-angle-table" class="tool-btn">Ângulos notáveis</button>
+        </div>
+        <div class="menu-wide"></div>
+        <div class="tool-row">
+          <span class="row-label">Forma geométrica</span>
+          <select id="scratch-shape-type" class="scratch-shape-select" aria-label="Forma geométrica">
+            <option value="circle">Círculo</option>
+            <option value="ellipse">Elipse</option>
+            <option value="triangle">Triângulo</option>
+            <option value="square">Quadrado</option>
+            <option value="rectangle">Retângulo</option>
+            <option value="diamond">Losango</option>
+            <option value="trapezoid">Trapézio</option>
+            <option value="parallelogram">Paralelogramo</option>
+            <option value="pentagon">Pentágono</option>
+            <option value="hexagon">Hexágono</option>
+            <option value="line">Linha</option>
+            <option value="arrow">Seta</option>
+          </select>
+          <button id="add-scratch-shape" class="tool-btn" type="button">Inserir</button>
+          <span class="row-label">Tamanho</span>
+          <input type="range" id="scratch-shape-size" min="60" max="360" value="160" step="10" style="width:120px;">
+          <span class="brush-size-label" id="scratch-shape-size-label" style="width:52px;">160px</span>
+        </div>
+        <span id="scratch-graph-place-hint" class="row-label" style="display:none; color:var(--pencil-dark);">Clique no rascunho para posicionar</span>
+      </div>
+    </details>
+
+    <details class="scratch-menu" id="scratch-menu-view">
+      <summary>Visualização</summary>
+      <div class="scratch-menu-panel">
+        <div class="tool-row">
+          <span class="row-label">Zoom</span>
+          <div class="scratch-zoom-controls">
+            <button id="scratch-zoom-out" class="tool-btn" type="button" title="Diminuir zoom do rascunho">−</button>
+            <button id="scratch-zoom-reset" class="tool-btn" type="button" title="Restaurar zoom para 100%">100%</button>
+            <button id="scratch-zoom-in" class="tool-btn" type="button" title="Aumentar zoom do rascunho">+</button>
+          </div>
+          <span class="scratch-zoom-hint">Ctrl + roda do mouse</span>
+        </div>
+        <div class="menu-wide"></div>
+        <div class="tool-row">
+          <span class="row-label">Prints</span>
+          <span class="scratch-paste-hint">Ctrl+V para colar · arraste pela alça</span>
+          <button id="remove-all-scratch-prints" class="tool-btn">Remover todos</button>
+          <span id="scratch-paste-status" class="scratch-paste-status" aria-live="polite"></span>
+        </div>
+      </div>
+    </details>
   </div>
   </div>
   <div class="draw-canvas-wrap">
@@ -1000,15 +1169,30 @@
   <div class="draw-footer"></div>
 </aside>
 
+
+<div id="triangle-type-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="triangle-type-title">
+  <div class="help-card triangle-type-card">
+    <h2 id="triangle-type-title">Qual tipo de triângulo?</h2>
+    <p class="triangle-modal-note">Escolha o formato antes de posicioná-lo no rascunho. O triângulo retângulo mostra a marca de ângulo reto e a indicação de 90°.</p>
+    <div class="triangle-type-options">
+      <button class="triangle-type-option" type="button" data-triangle-type="equilateral"><strong>Equilátero</strong><span>Três lados iguais.</span></button>
+      <button class="triangle-type-option" type="button" data-triangle-type="isosceles"><strong>Isósceles</strong><span>Dois lados iguais.</span></button>
+      <button class="triangle-type-option" type="button" data-triangle-type="scalene"><strong>Escaleno</strong><span>Três lados diferentes.</span></button>
+      <button class="triangle-type-option" type="button" data-triangle-type="right"><strong>Retângulo</strong><span>Possui um ângulo de 90°.</span></button>
+    </div>
+    <div class="btn-row"><button id="triangle-type-cancel" class="secondary" type="button">Cancelar</button></div>
+  </div>
+</div>
+
 <div class="scratch-side-actions" aria-label="Ações do rascunho">
-  <button id="draw-undo" class="secondary" title="Desfazer último traço (Ctrl+Z)">↺</button>
-  <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">🗑</button>
+  <button id="draw-undo" class="secondary" title="Desfazer último traço (Ctrl+Z)">Desfazer</button>
+  <button id="draw-clear" class="secondary" title="Apagar todo o rascunho">Limpar</button>
 </div>
 
 <div id="help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="help-card">
     <h2 id="help-title">Ajuda rápida</h2>
-    <p class="hint">O estado da ferramenta é salvo automaticamente no navegador. Use múltiplas funções para comparar gráficos e encontrar interseções.</p>
+    <p class="hint">O estado da ferramenta é salvo automaticamente no navegador. Use múltiplas funções, gráficos e formas geométricas no rascunho para estudar e anotar.</p>
     <div class="help-grid">
       <div><span class="help-key">M</span> — Marcar pontos</div><div><span class="help-key">V</span> — Mover plano</div>
       <div><span class="help-key">D</span> — Desenhar</div><div><span class="help-key">E</span> — Borracha</div>
@@ -2658,10 +2842,23 @@
   const scratchGraphSizeLabel = document.getElementById('scratch-graph-size-label');
   const scratchGraphPlaceHint = document.getElementById('scratch-graph-place-hint');
   const addScratchGraphBtn = document.getElementById('add-scratch-graph');
+  const addScratchSinGraphBtn = document.getElementById('add-scratch-sin-graph');
+  const addScratchCosGraphBtn = document.getElementById('add-scratch-cos-graph');
+  const addScratchTanGraphBtn = document.getElementById('add-scratch-tan-graph');
   const addScratchTrigAxisBtn = document.getElementById('add-scratch-trig-axis');
   const addScratchUnitCircleBtn = document.getElementById('add-scratch-unit-circle');
   const addScratchAngleTableBtn = document.getElementById('add-scratch-angle-table');
-  const scratchResourceButtons = [addScratchGraphBtn,addScratchTrigAxisBtn,addScratchUnitCircleBtn,addScratchAngleTableBtn].filter(Boolean);
+  const scratchShapeType = document.getElementById('scratch-shape-type');
+  const addScratchShapeBtn = document.getElementById('add-scratch-shape');
+  const scratchShapeSize = document.getElementById('scratch-shape-size');
+  const scratchShapeSizeLabel = document.getElementById('scratch-shape-size-label');
+  const triangleTypeModal = document.getElementById('triangle-type-modal');
+  const triangleTypeCancel = document.getElementById('triangle-type-cancel');
+  let pendingTriangleVariant = 'equilateral';
+  const scratchZoomOutBtn = document.getElementById('scratch-zoom-out');
+  const scratchZoomResetBtn = document.getElementById('scratch-zoom-reset');
+  const scratchZoomInBtn = document.getElementById('scratch-zoom-in');
+  const scratchResourceButtons = [addScratchGraphBtn,addScratchSinGraphBtn,addScratchCosGraphBtn,addScratchTanGraphBtn,addScratchTrigAxisBtn,addScratchUnitCircleBtn,addScratchAngleTableBtn,addScratchShapeBtn].filter(Boolean);
 
   const scratchPrintLayer = document.getElementById('scratch-print-layer');
   const scratchPrintControls = document.getElementById('scratch-print-controls');
@@ -2695,6 +2892,10 @@
   let pendingScratchPrints = [];
   let scratchContentRestored = false;
   let restoringScratch = false;
+  let scratchZoom = 1;
+  const SCRATCH_ZOOM_MIN = 0.5;
+  const SCRATCH_ZOOM_MAX = 2;
+  const SCRATCH_ZOOM_STEP = 0.1;
   let isOpen = false, history = [], tool = 'pen', currentColor = '#1A202C', currentPenSize = 4, currentEraserSize = 18, drawing = false, lastX=0, lastY=0;
 
   // Estabilização do traço: 0 = direto, 90 = bastante suave.
@@ -2712,12 +2913,12 @@
     return {dataUrl:snap.toDataURL('image/png'),usedHeight:drawingUsedHeight};
   }
 
-  function scratchGraphState(){return scratchGraphs.map(g=>({type:g.type||'xy',left:parseFloat(g.wrapper.style.left)||0,top:parseFloat(g.wrapper.style.top)||0,width:parseFloat(g.wrapper.style.width)||340,height:parseFloat(g.wrapper.style.height)||238}));}
+  function scratchGraphState(){return scratchGraphs.map(g=>({type:g.type||'xy',color:g.color||null,shapeVariant:g.shapeVariant||null,left:parseFloat(g.wrapper.style.left)||0,top:parseFloat(g.wrapper.style.top)||0,width:parseFloat(g.wrapper.style.width)||340,height:parseFloat(g.wrapper.style.height)||238}));}
   function scratchPrintState(){return scratchPrints.map(p=>({src:p.img.src,left:p.left,top:p.top,width:p.width,height:p.height}));}
 
   function saveScratchStateNow(){
     if(restoringScratch)return;
-    const base={version:2,areaHeight:scratchAreaHeight,color:currentColor,penSize:currentPenSize,eraserSize:currentEraserSize,stability:currentStability,pdfName:scratchPdfNameInput.value,graphs:scratchGraphState(),prints:scratchPrintState(),bitmap:getScratchBitmapData()};
+    const base={version:2,areaHeight:scratchAreaHeight,zoom:scratchZoom,color:currentColor,penSize:currentPenSize,eraserSize:currentEraserSize,stability:currentStability,pdfName:scratchPdfNameInput.value,shapeSize:parseInt(scratchShapeSize?.value,10)||160,shapeType:scratchShapeType?.value||'circle',graphs:scratchGraphState(),prints:scratchPrintState(),bitmap:getScratchBitmapData()};
     try{localStorage.setItem(SCRATCH_STORAGE_KEY,JSON.stringify(base));}
     catch(err){
       // Imagens coladas podem ocupar vários MB. Se o limite for atingido,
@@ -2730,9 +2931,11 @@
 
   function loadScratchState(){
     try{const raw=localStorage.getItem(SCRATCH_STORAGE_KEY);if(!raw)return;const st=JSON.parse(raw);if(!st||st.version!==2)return;
-      scratchAreaHeight=Math.max(SCRATCH_INITIAL_HEIGHT,Number(st.areaHeight)||SCRATCH_INITIAL_HEIGHT);currentColor=st.color||currentColor;currentPenSize=Number(st.penSize)||4;currentEraserSize=Number(st.eraserSize)||18;currentStability=Number(st.stability)||55;
+      scratchAreaHeight=Math.max(SCRATCH_INITIAL_HEIGHT,Number(st.areaHeight)||SCRATCH_INITIAL_HEIGHT);scratchZoom=Math.max(SCRATCH_ZOOM_MIN,Math.min(SCRATCH_ZOOM_MAX,Number(st.zoom)||1));currentColor=st.color||currentColor;currentPenSize=Number(st.penSize)||4;currentEraserSize=Number(st.eraserSize)||18;currentStability=Number(st.stability)||55;
       pendingScratchBitmap=st.bitmap||null;pendingScratchGraphs=Array.isArray(st.graphs)?st.graphs:[];pendingScratchPrints=Array.isArray(st.prints)?st.prints:[];
       if(st.pdfName)scratchPdfNameInput.value=st.pdfName;
+      if(scratchShapeSize){scratchShapeSize.value=Math.max(60,Math.min(360,Number(st.shapeSize)||160));scratchShapeSizeLabel.textContent=scratchShapeSize.value+'px';}
+      if(scratchShapeType&&st.shapeType)scratchShapeType.value=st.shapeType;
       document.getElementById('custom-color').value=currentColor;document.getElementById('scratch-pen-size').value=currentPenSize;document.getElementById('scratch-pen-size-label').textContent=currentPenSize+'px';document.getElementById('scratch-eraser-size').value=currentEraserSize;document.getElementById('scratch-eraser-size-label').textContent=currentEraserSize+'px';document.getElementById('stroke-stability').value=currentStability;document.getElementById('stroke-stability-label').textContent=currentStability+'%';
       document.querySelectorAll('.draw-toolbar .swatch').forEach(sw=>sw.classList.toggle('active',(sw.dataset.color||'').toLowerCase()===currentColor.toLowerCase()));
     }catch(err){console.warn('Não foi possível restaurar o rascunho.',err);}
@@ -2743,8 +2946,17 @@
     const finish=()=>{restoringScratch=false;scheduleScratchSave();};
     const restoreExtras=()=>{
       const originalSize=scratchGraphSize.value;
-      pendingScratchGraphs.forEach(g=>{scratchGraphSize.value=Math.round(g.width||340);const wrapRect=canvas.parentElement.getBoundingClientRect();createScratchGraphAt(wrapRect.left+(g.left||0)+(g.width||340)/2,wrapRect.top+(g.top||0)+(g.height||238)/2,g.type||'xy');});
-      scratchGraphSize.value=originalSize;getScratchGraphDimensions();
+      const originalShapeSize=scratchShapeSize ? scratchShapeSize.value : 160;
+      pendingScratchGraphs.forEach(g=>{
+        if(String(g.type||'').startsWith('shape-') && scratchShapeSize) scratchShapeSize.value=Math.round(g.width||160);
+        else scratchGraphSize.value=Math.round(g.width||340);
+        const wrapRect=canvas.parentElement.getBoundingClientRect();
+        createScratchGraphAt(wrapRect.left+(g.left||0)+(g.width||340)/2,wrapRect.top+(g.top||0)+(g.height||238)/2,g.type||'xy',g.color||null,g.shapeVariant||null);
+      });
+      scratchGraphSize.value=originalSize;
+      if(scratchShapeSize) scratchShapeSize.value=originalShapeSize;
+      getScratchGraphDimensions();
+      if(scratchShapeSizeLabel) scratchShapeSizeLabel.textContent=(parseInt(scratchShapeSize.value,10)||160)+'px';
       pendingScratchPrints.forEach(pr=>createScratchPrintFromDataUrl(pr.src,pr));
       pendingScratchGraphs=[];pendingScratchPrints=[];
     };
@@ -2753,6 +2965,13 @@
   }
 
   function scratchResourceLabel(type){
+    if(type==='trig-sin') return 'gráfico de seno';
+    if(type==='trig-cos') return 'gráfico de cosseno';
+    if(type==='trig-tan') return 'gráfico de tangente';
+    if(String(type).startsWith('shape-')) {
+      const names={circle:'círculo',ellipse:'elipse',triangle:'triângulo',square:'quadrado',rectangle:'retângulo',diamond:'losango',trapezoid:'trapézio',parallelogram:'paralelogramo',pentagon:'pentágono',hexagon:'hexágono',line:'linha',arrow:'seta'};
+      return names[String(type).replace('shape-','')] || 'forma geométrica';
+    }
     return type==='trig-axis'?'eixos trigonométricos':type==='unit-circle'?'círculo trigonométrico':type==='angle-table'?'tabela de ângulos':'gráfico X/Y';
   }
 
@@ -2760,20 +2979,34 @@
     placingScratchGraph = enabled;
     scratchGraphTypeToPlace = type || 'xy';
     scratchResourceButtons.forEach(btn=>btn.classList.remove('active'));
-    const activeMap={'xy':addScratchGraphBtn,'trig-axis':addScratchTrigAxisBtn,'unit-circle':addScratchUnitCircleBtn,'angle-table':addScratchAngleTableBtn};
-    if(enabled&&activeMap[scratchGraphTypeToPlace])activeMap[scratchGraphTypeToPlace].classList.add('active');
-    if(addScratchGraphBtn)addScratchGraphBtn.textContent=enabled&&scratchGraphTypeToPlace==='xy'?'📍 Posicionar':'＋ Inserir';
+    const activeMap={'xy':addScratchGraphBtn,'trig-sin':addScratchSinGraphBtn,'trig-cos':addScratchCosGraphBtn,'trig-tan':addScratchTanGraphBtn,'trig-axis':addScratchTrigAxisBtn,'unit-circle':addScratchUnitCircleBtn,'angle-table':addScratchAngleTableBtn};
+    const activeButton=String(scratchGraphTypeToPlace).startsWith('shape-')?addScratchShapeBtn:activeMap[scratchGraphTypeToPlace];
+    if(enabled&&activeButton)activeButton.classList.add('active');
+    if(addScratchGraphBtn)addScratchGraphBtn.textContent=enabled&&scratchGraphTypeToPlace==='xy'?'Posicionar':'Inserir';
     scratchGraphPlaceHint.style.display = enabled ? 'inline' : 'none';
     scratchGraphPlaceHint.textContent = enabled ? `Clique no rascunho para posicionar ${scratchResourceLabel(scratchGraphTypeToPlace)}` : 'Clique no rascunho para posicionar';
     if (enabled) canvas.style.cursor = 'crosshair'; else updateBrushCursor();
   }
 
   function getScratchGraphDimensions(type=scratchGraphTypeToPlace){
-    const width = Math.max(220, Math.min(520, parseInt(scratchGraphSize.value, 10) || 340));
+    const isShape=String(type).startsWith('shape-');
+    const width = isShape
+      ? Math.max(60,Math.min(360,parseInt(scratchShapeSize?.value,10)||160))
+      : Math.max(220, Math.min(520, parseInt(scratchGraphSize.value, 10) || 340));
     let height=Math.round(width*.70);
-    if(type==='unit-circle')height=width;
-    else if(type==='angle-table')height=Math.round(width*.72);
-    scratchGraphSizeLabel.textContent = width + 'px';
+    if(isShape){
+      const shape=String(type).replace('shape-','');
+      if(['circle','square','diamond','pentagon','hexagon'].includes(shape)) height=width;
+      else if(shape==='triangle') height=Math.round(width*.86);
+      else if(shape==='line'||shape==='arrow') height=Math.max(60,Math.round(width*.42));
+      else height=Math.round(width*.65);
+      if(scratchShapeSizeLabel) scratchShapeSizeLabel.textContent=width+'px';
+    } else {
+      if(type==='unit-circle')height=width;
+      else if(type==='angle-table')height=Math.round(width*.72);
+      else if(type==='trig-sin'||type==='trig-cos'||type==='trig-tan')height=Math.round(width*.62);
+      scratchGraphSizeLabel.textContent = width + 'px';
+    }
     return { width, height };
   }
 
@@ -2796,6 +3029,55 @@
     graphCtx.strokeStyle=colors.gridSoft;graphCtx.setLineDash([4,4]);[cy-h*.28,cy+h*.28].forEach(y=>{graphCtx.beginPath();graphCtx.moveTo(12,y);graphCtx.lineTo(w-12,y);graphCtx.stroke();});graphCtx.setLineDash([]);
   }
 
+  function drawScratchCleanTrigGraph(graphCtx,w,h,colors,fn){
+    const pad=14,cx=w/2,cy=h/2;
+    const xMin=-2*Math.PI,xMax=2*Math.PI;
+    const xToScreen=x=>pad+((x-xMin)/(xMax-xMin))*(w-pad*2);
+    const yScale=h*.28;
+
+    // Apenas eixos + curva: sem ângulos, valores notáveis, fórmulas ou orientações.
+    graphCtx.strokeStyle=colors.axis;
+    graphCtx.lineWidth=1.3;
+    graphCtx.setLineDash([]);
+    graphCtx.beginPath();
+    graphCtx.moveTo(pad,cy); graphCtx.lineTo(w-pad,cy);
+    graphCtx.moveTo(cx,pad); graphCtx.lineTo(cx,h-pad);
+    graphCtx.stroke();
+
+    graphCtx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pencil-dark').trim() || '#C97F1E';
+    graphCtx.lineWidth=2.2;
+    graphCtx.lineCap='round';
+    graphCtx.lineJoin='round';
+
+    let drawingSegment=false;
+    graphCtx.beginPath();
+    const steps=Math.max(280,Math.round(w*1.4));
+    for(let i=0;i<=steps;i++){
+      const x=xMin+(xMax-xMin)*(i/steps);
+      let y=fn==='sin'?Math.sin(x):fn==='cos'?Math.cos(x):Math.tan(x);
+      const sx=xToScreen(x);
+
+      if(fn==='tan'){
+        const cos=Math.cos(x);
+        if(Math.abs(cos)<0.055 || !Number.isFinite(y) || Math.abs(y)>4){
+          drawingSegment=false;
+          continue;
+        }
+        y=Math.max(-3.2,Math.min(3.2,y));
+      }
+
+      const sy=cy-y*yScale;
+      if(sy<pad-4||sy>h-pad+4){
+        drawingSegment=false;
+        continue;
+      }
+
+      if(!drawingSegment){graphCtx.moveTo(sx,sy);drawingSegment=true;}
+      else graphCtx.lineTo(sx,sy);
+    }
+    graphCtx.stroke();
+  }
+
   function drawScratchUnitCircle(graphCtx,w,h,colors){
     const cx=w/2,cy=h/2,r=Math.min(w,h)*.34;graphCtx.strokeStyle=colors.axis;graphCtx.fillStyle=colors.ink;graphCtx.lineWidth=1.5;
     graphCtx.beginPath();graphCtx.arc(cx,cy,r,0,Math.PI*2);graphCtx.stroke();
@@ -2816,11 +3098,90 @@
     graphCtx.strokeStyle=colors.gridStrong;graphCtx.lineWidth=1;for(let i=0;i<=headers.length;i++){const x=x0+i*colW;graphCtx.beginPath();graphCtx.moveTo(x,y0);graphCtx.lineTo(x,y0+rowH*(rows.length+1));graphCtx.stroke();}for(let r=0;r<=rows.length+1;r++){const y=y0+r*rowH;graphCtx.beginPath();graphCtx.moveTo(x0,y);graphCtx.lineTo(x0+tableW,y);graphCtx.stroke();}
   }
 
+  function drawScratchShape(graphCtx,w,h,graph){
+    const shape=String(graph.type||'').replace('shape-','');
+    const pad=Math.max(8,Math.min(w,h)*0.08);
+    const cx=w/2,cy=h/2;
+    const stroke=graph.color || '#1A202C';
+    graphCtx.save();
+    graphCtx.strokeStyle=stroke;
+    graphCtx.fillStyle='transparent';
+    graphCtx.lineWidth=Math.max(2,Math.min(5,Math.min(w,h)/55));
+    graphCtx.lineCap='round';
+    graphCtx.lineJoin='round';
+    graphCtx.setLineDash([]);
+
+    if(shape==='circle'){
+      graphCtx.beginPath();graphCtx.arc(cx,cy,Math.max(2,Math.min(w,h)/2-pad),0,Math.PI*2);graphCtx.stroke();
+    } else if(shape==='ellipse'){
+      graphCtx.beginPath();graphCtx.ellipse(cx,cy,Math.max(2,w/2-pad),Math.max(2,h/2-pad),0,0,Math.PI*2);graphCtx.stroke();
+    } else if(shape==='triangle'){
+      const variant=graph.shapeVariant || 'equilateral';
+      let a,b,c;
+      if(variant==='right'){
+        a={x:pad,y:h-pad}; b={x:w-pad,y:h-pad}; c={x:pad,y:pad};
+      } else if(variant==='scalene'){
+        a={x:w*.34,y:pad}; b={x:w-pad,y:h-pad}; c={x:pad*1.15,y:h-pad};
+      } else if(variant==='isosceles'){
+        a={x:cx,y:pad}; b={x:w-pad*1.45,y:h-pad}; c={x:pad*1.45,y:h-pad};
+      } else {
+        a={x:cx,y:pad}; b={x:w-pad,y:h-pad}; c={x:pad,y:h-pad};
+      }
+      graphCtx.beginPath();graphCtx.moveTo(a.x,a.y);graphCtx.lineTo(b.x,b.y);graphCtx.lineTo(c.x,c.y);graphCtx.closePath();graphCtx.stroke();
+      if(variant==='right'){
+        const mark=Math.max(12,Math.min(24,Math.min(w,h)*.14));
+        graphCtx.beginPath();
+        graphCtx.moveTo(a.x,a.y-mark);graphCtx.lineTo(a.x+mark,a.y-mark);graphCtx.lineTo(a.x+mark,a.y);graphCtx.stroke();
+        graphCtx.fillStyle=stroke;
+        graphCtx.font=`700 ${Math.max(9,Math.min(13,w/14))}px 'IBM Plex Mono', monospace`;
+        graphCtx.textAlign='left';graphCtx.textBaseline='bottom';
+        graphCtx.fillText('90°',a.x+mark+5,a.y-3);
+      }
+    } else if(shape==='square'||shape==='rectangle'){
+      graphCtx.strokeRect(pad,pad,Math.max(1,w-pad*2),Math.max(1,h-pad*2));
+    } else if(shape==='diamond'){
+      graphCtx.beginPath();graphCtx.moveTo(cx,pad);graphCtx.lineTo(w-pad,cy);graphCtx.lineTo(cx,h-pad);graphCtx.lineTo(pad,cy);graphCtx.closePath();graphCtx.stroke();
+    } else if(shape==='trapezoid'){
+      const inset=Math.max(pad*1.8,w*.22);
+      graphCtx.beginPath();graphCtx.moveTo(inset,pad);graphCtx.lineTo(w-inset,pad);graphCtx.lineTo(w-pad,h-pad);graphCtx.lineTo(pad,h-pad);graphCtx.closePath();graphCtx.stroke();
+    } else if(shape==='parallelogram'){
+      const skew=Math.min(w*.22,Math.max(14,pad*1.7));
+      graphCtx.beginPath();graphCtx.moveTo(pad+skew,pad);graphCtx.lineTo(w-pad,pad);graphCtx.lineTo(w-pad-skew,h-pad);graphCtx.lineTo(pad,h-pad);graphCtx.closePath();graphCtx.stroke();
+    } else if(shape==='pentagon'||shape==='hexagon'){
+      const sides=shape==='pentagon'?5:6;
+      const rx=w/2-pad,ry=h/2-pad;
+      graphCtx.beginPath();
+      for(let i=0;i<sides;i++){const a=-Math.PI/2+i*Math.PI*2/sides;const x=cx+Math.cos(a)*rx,y=cy+Math.sin(a)*ry;if(i===0)graphCtx.moveTo(x,y);else graphCtx.lineTo(x,y);}
+      graphCtx.closePath();graphCtx.stroke();
+    } else if(shape==='line'||shape==='arrow'){
+      const x1=pad,y1=h-pad,x2=w-pad,y2=pad;
+      graphCtx.beginPath();graphCtx.moveTo(x1,y1);graphCtx.lineTo(x2,y2);graphCtx.stroke();
+      if(shape==='arrow'){
+        const angle=Math.atan2(y2-y1,x2-x1);
+        const head=Math.max(12,Math.min(28,w*.12));
+        graphCtx.beginPath();
+        graphCtx.moveTo(x2,y2);
+        graphCtx.lineTo(x2-head*Math.cos(angle-Math.PI/6),y2-head*Math.sin(angle-Math.PI/6));
+        graphCtx.moveTo(x2,y2);
+        graphCtx.lineTo(x2-head*Math.cos(angle+Math.PI/6),y2-head*Math.sin(angle+Math.PI/6));
+        graphCtx.stroke();
+      }
+    }
+    graphCtx.restore();
+  }
+
   function drawOneScratchGraph(graph){
-    const wrapper=graph.wrapper,graphCanvas=graph.canvas,graphCtx=graph.ctx;const rect=wrapper.getBoundingClientRect();if(rect.width<=0||rect.height<=0)return;
-    const graphDpr=Math.max(window.devicePixelRatio||1,1);graphCanvas.width=Math.round(rect.width*graphDpr);graphCanvas.height=Math.round(rect.height*graphDpr);graphCanvas.style.width=rect.width+'px';graphCanvas.style.height=rect.height+'px';graphCtx.setTransform(graphDpr,0,0,graphDpr,0,0);
-    const w=rect.width,h=rect.height,colors=getThemeColors();graphCtx.clearRect(0,0,w,h);graphCtx.lineCap='round';graphCtx.lineJoin='round';
-    if(graph.type==='trig-axis')drawScratchTrigAxis(graphCtx,w,h,colors);
+    const wrapper=graph.wrapper,graphCanvas=graph.canvas,graphCtx=graph.ctx;
+    const w=wrapper.clientWidth||parseFloat(wrapper.style.width)||340;
+    const h=wrapper.clientHeight||parseFloat(wrapper.style.height)||238;
+    if(w<=0||h<=0)return;
+    const graphDpr=Math.max(window.devicePixelRatio||1,1);graphCanvas.width=Math.round(w*graphDpr);graphCanvas.height=Math.round(h*graphDpr);graphCanvas.style.width=w+'px';graphCanvas.style.height=h+'px';graphCtx.setTransform(graphDpr,0,0,graphDpr,0,0);
+    const colors=getThemeColors();graphCtx.clearRect(0,0,w,h);graphCtx.lineCap='round';graphCtx.lineJoin='round';
+    if(String(graph.type).startsWith('shape-'))drawScratchShape(graphCtx,w,h,graph);
+    else if(graph.type==='trig-sin')drawScratchCleanTrigGraph(graphCtx,w,h,colors,'sin');
+    else if(graph.type==='trig-cos')drawScratchCleanTrigGraph(graphCtx,w,h,colors,'cos');
+    else if(graph.type==='trig-tan')drawScratchCleanTrigGraph(graphCtx,w,h,colors,'tan');
+    else if(graph.type==='trig-axis')drawScratchTrigAxis(graphCtx,w,h,colors);
     else if(graph.type==='unit-circle')drawScratchUnitCircle(graphCtx,w,h,colors);
     else if(graph.type==='angle-table')drawScratchAngleTable(graphCtx,w,h,colors);
     else drawScratchAxesBase(graphCtx,w,h,colors,'x','y');
@@ -2828,7 +3189,7 @@
 
   function redrawAllScratchGraphs(){scratchGraphs.forEach(drawOneScratchGraph);}
 
-  function createScratchGraphAt(clientX, clientY, type=scratchGraphTypeToPlace){
+  function createScratchGraphAt(clientX, clientY, type=scratchGraphTypeToPlace, savedColor=null, savedShapeVariant=null){
     const wrap = canvas.parentElement;
     const wrapRect = wrap.getBoundingClientRect();
     const { width, height } = getScratchGraphDimensions(type);
@@ -2848,8 +3209,10 @@
     wrap.appendChild(wrapper);
 
     // Centraliza no ponto escolhido e mantém dentro da folha.
-    let left = clientX - wrapRect.left - width / 2;
-    let top = clientY - wrapRect.top - height / 2;
+    const scaleX = wrapRect.width > 0 ? wrap.clientWidth / wrapRect.width : 1;
+    const scaleY = wrapRect.height > 0 ? wrap.clientHeight / wrapRect.height : 1;
+    let left = (clientX - wrapRect.left) * scaleX - width / 2;
+    let top = (clientY - wrapRect.top) * scaleY - height / 2;
 
     const maxLeft = Math.max(0, wrap.clientWidth - width);
     const maxTop = Math.max(0, wrap.clientHeight - height);
@@ -2863,6 +3226,8 @@
     const graph = {
       id: scratchGraphCounter,
       type,
+      color: String(type).startsWith('shape-') ? (savedColor || currentColor) : null,
+      shapeVariant: type === 'shape-triangle' ? (savedShapeVariant || pendingTriangleVariant || 'equilateral') : null,
       wrapper,
       canvas: graphCanvas,
       ctx: graphCanvas.getContext('2d')
@@ -2879,9 +3244,35 @@
   }
 
   addScratchGraphBtn.addEventListener('click', ()=>beginScratchGraphPlacement('xy'));
+  addScratchSinGraphBtn.addEventListener('click', ()=>beginScratchGraphPlacement('trig-sin'));
+  addScratchCosGraphBtn.addEventListener('click', ()=>beginScratchGraphPlacement('trig-cos'));
+  addScratchTanGraphBtn.addEventListener('click', ()=>beginScratchGraphPlacement('trig-tan'));
   addScratchTrigAxisBtn.addEventListener('click', ()=>beginScratchGraphPlacement('trig-axis'));
   addScratchUnitCircleBtn.addEventListener('click', ()=>beginScratchGraphPlacement('unit-circle'));
   addScratchAngleTableBtn.addEventListener('click', ()=>beginScratchGraphPlacement('angle-table'));
+  function closeTriangleTypeModal(){
+    triangleTypeModal?.classList.remove('open');
+  }
+
+  addScratchShapeBtn.addEventListener('click', ()=>{
+    const shape=scratchShapeType?.value || 'circle';
+    if(shape==='triangle'){
+      triangleTypeModal?.classList.add('open');
+      return;
+    }
+    pendingTriangleVariant='equilateral';
+    beginScratchGraphPlacement('shape-'+shape);
+  });
+
+  document.querySelectorAll('[data-triangle-type]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      pendingTriangleVariant=btn.dataset.triangleType || 'equilateral';
+      closeTriangleTypeModal();
+      beginScratchGraphPlacement('shape-triangle');
+    });
+  });
+  triangleTypeCancel?.addEventListener('click',closeTriangleTypeModal);
+  triangleTypeModal?.addEventListener('click',(e)=>{if(e.target===triangleTypeModal)closeTriangleTypeModal();});
 
   document.getElementById('remove-scratch-graph').addEventListener('click', () => {
     // Remove somente o último gráfico inserido.
@@ -2896,10 +3287,25 @@
     scheduleScratchSave();
   });
 
+  scratchShapeSize.addEventListener('input', () => {
+    scratchShapeSizeLabel.textContent=(parseInt(scratchShapeSize.value,10)||160)+'px';
+    if(String(scratchGraphTypeToPlace).startsWith('shape-')) getScratchGraphDimensions(scratchGraphTypeToPlace);
+    scheduleScratchSave();
+  });
+  scratchShapeType.addEventListener('change', scheduleScratchSave);
+
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && placingScratchGraph) {
-      setScratchGraphPlacementMode(false);
+    if (e.key === 'Escape') {
+      if (triangleTypeModal?.classList.contains('open')) closeTriangleTypeModal();
+      if (placingScratchGraph) setScratchGraphPlacementMode(false);
     }
+  });
+
+  document.querySelectorAll('.scratch-menu').forEach(menu=>{
+    menu.addEventListener('toggle',()=>{
+      if(!menu.open)return;
+      document.querySelectorAll('.scratch-menu').forEach(other=>{if(other!==menu)other.open=false;});
+    });
   });
 
   function showScratchPasteStatus(message){
@@ -2996,8 +3402,11 @@
       event.stopPropagation();
 
       const wrap = canvas.parentElement;
-      const dx = event.clientX - startClientX;
-      const dy = event.clientY - startClientY;
+      const wrapRect = wrap.getBoundingClientRect();
+      const scaleX = wrapRect.width > 0 ? wrap.clientWidth / wrapRect.width : 1;
+      const scaleY = wrapRect.height > 0 ? wrap.clientHeight / wrapRect.height : 1;
+      const dx = (event.clientX - startClientX) * scaleX;
+      const dy = (event.clientY - startClientY) * scaleY;
 
       const maxLeft = Math.max(0, wrap.clientWidth - print.width);
       const maxTop = Math.max(0, wrap.clientHeight - print.height);
@@ -3027,8 +3436,10 @@
     const visibleCenterX = drawerRect.left + drawerRect.width / 2;
     const visibleCenterY = drawerRect.top + drawerRect.height / 2;
 
-    let left = visibleCenterX - wrapRect.left - width / 2;
-    let top = visibleCenterY - wrapRect.top - height / 2;
+    const scaleX = wrapRect.width > 0 ? wrap.clientWidth / wrapRect.width : 1;
+    const scaleY = wrapRect.height > 0 ? wrap.clientHeight / wrapRect.height : 1;
+    let left = (visibleCenterX - wrapRect.left) * scaleX - width / 2;
+    let top = (visibleCenterY - wrapRect.top) * scaleY - height / 2;
 
     const maxLeft = Math.max(0, wrap.clientWidth - width);
     const maxTop = Math.max(0, wrap.clientHeight - height);
@@ -3160,8 +3571,9 @@
 
   function resizeCanvas(){
     const wrap = canvas.parentElement;
-    const rect = wrap.getBoundingClientRect();
-    if(rect.width === 0) return;
+    const layoutWidth = wrap.clientWidth;
+    const layoutHeight = wrap.clientHeight;
+    if(layoutWidth === 0) return;
 
     dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 1.25);
 
@@ -3173,14 +3585,14 @@
       prev.getContext('2d').drawImage(canvas, 0, 0);
     }
 
-    const newWidth = Math.max(1, Math.round(rect.width * dpr));
-    const newHeight = Math.max(1, Math.round(rect.height * dpr));
+    const newWidth = Math.max(1, Math.round(layoutWidth * dpr));
+    const newHeight = Math.max(1, Math.round(layoutHeight * dpr));
 
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
       canvas.width = newWidth;
       canvas.height = newHeight;
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+      canvas.style.width = layoutWidth + 'px';
+      canvas.style.height = layoutHeight + 'px';
 
       // Restaura pixel a pixel; aumentar a folha não estica o que já foi desenhado.
       if (prev.width > 0 && prev.height > 0) {
@@ -3189,8 +3601,8 @@
         rawCtx.drawImage(prev, 0, 0);
       }
     } else {
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+      canvas.style.width = layoutWidth + 'px';
+      canvas.style.height = layoutHeight + 'px';
     }
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3249,11 +3661,35 @@
   }
 
   
+  function updateScratchZoomUi(){
+    const pct=Math.round(scratchZoom*100);
+    if(scratchZoomResetBtn)scratchZoomResetBtn.textContent=pct+'%';
+    if(scratchZoomOutBtn)scratchZoomOutBtn.disabled=scratchZoom<=SCRATCH_ZOOM_MIN+1e-9;
+    if(scratchZoomInBtn)scratchZoomInBtn.disabled=scratchZoom>=SCRATCH_ZOOM_MAX-1e-9;
+  }
+
+  function applyScratchZoom(value, save=true){
+    const next=Math.max(SCRATCH_ZOOM_MIN,Math.min(SCRATCH_ZOOM_MAX,Math.round(value*100)/100));
+    scratchZoom=next;
+    const wrap=canvas.parentElement;
+    wrap.style.zoom=String(scratchZoom);
+    updateScratchZoomUi();
+    redrawAllScratchGraphs();
+    updateBrushCursor();
+    if(save)scheduleScratchSave();
+  }
+
+  scratchZoomOutBtn.addEventListener('click',()=>applyScratchZoom(scratchZoom-SCRATCH_ZOOM_STEP));
+  scratchZoomInBtn.addEventListener('click',()=>applyScratchZoom(scratchZoom+SCRATCH_ZOOM_STEP));
+  scratchZoomResetBtn.addEventListener('click',()=>applyScratchZoom(1));
+
+  
   document.getElementById('open-draw-btn').addEventListener('click', () => {
     isOpen = true;
     drawer.classList.add('open');
 
     requestAnimationFrame(() => {
+      applyScratchZoom(scratchZoom,false);
       applyScratchAreaHeight(scratchAreaHeight);
       restoreScratchContent();
       maybeGrowScratchArea();
@@ -3261,6 +3697,11 @@
   });
 
   drawer.addEventListener('scroll', maybeGrowScratchArea, { passive: true });
+  drawer.addEventListener('wheel', (event) => {
+    if(!isOpen || !(event.ctrlKey || event.metaKey)) return;
+    event.preventDefault();
+    applyScratchZoom(scratchZoom + (event.deltaY < 0 ? SCRATCH_ZOOM_STEP : -SCRATCH_ZOOM_STEP));
+  }, { passive:false });
 
   document.getElementById('draw-close').addEventListener('click', () => {
     isOpen = false;
@@ -3305,7 +3746,12 @@
 
   function getPos(e){
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scaleX = rect.width > 0 ? canvas.clientWidth / rect.width : 1;
+    const scaleY = rect.height > 0 ? canvas.clientHeight / rect.height : 1;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
   }
   
   function getStabilizedPoint(rawX, rawY) {
@@ -3570,61 +4016,16 @@
   }
 
   function drawGraphForPdf(targetCtx, graph){
-    const wrapper = graph.wrapper;
-    const left = parseFloat(wrapper.style.left) || 0;
-    const top = parseFloat(wrapper.style.top) || 0;
-    const width = wrapper.offsetWidth || parseFloat(wrapper.style.width) || 340;
-    const height = wrapper.offsetHeight || parseFloat(wrapper.style.height) || Math.round(width * 0.70);
-
-    const cx = left + width / 2;
-    const cy = top + height / 2;
-
+    const wrapper=graph.wrapper;
+    const left=parseFloat(wrapper.style.left)||0;
+    const top=parseFloat(wrapper.style.top)||0;
+    const width=wrapper.offsetWidth||parseFloat(wrapper.style.width)||340;
+    const height=wrapper.offsetHeight||parseFloat(wrapper.style.height)||Math.round(width*.70);
+    // Reaproveita o canvas renderizado do recurso. Isso mantém no PDF gráficos,
+    // referências trigonométricas e todas as formas geométricas exatamente como na tela.
+    drawOneScratchGraph(graph);
     targetCtx.save();
-    targetCtx.strokeStyle = '#334155';
-    targetCtx.fillStyle = '#334155';
-    targetCtx.lineWidth = 1.7;
-    targetCtx.lineCap = 'round';
-    targetCtx.lineJoin = 'round';
-
-    // Eixo X
-    targetCtx.beginPath();
-    targetCtx.moveTo(left + 8, cy);
-    targetCtx.lineTo(left + width - 10, cy);
-    targetCtx.stroke();
-
-    targetCtx.beginPath();
-    targetCtx.moveTo(left + width - 10, cy);
-    targetCtx.lineTo(left + width - 18, cy - 5);
-    targetCtx.moveTo(left + width - 10, cy);
-    targetCtx.lineTo(left + width - 18, cy + 5);
-    targetCtx.stroke();
-
-    // Eixo Y
-    targetCtx.beginPath();
-    targetCtx.moveTo(cx, top + height - 8);
-    targetCtx.lineTo(cx, top + 10);
-    targetCtx.stroke();
-
-    targetCtx.beginPath();
-    targetCtx.moveTo(cx, top + 10);
-    targetCtx.lineTo(cx - 5, top + 18);
-    targetCtx.moveTo(cx, top + 10);
-    targetCtx.lineTo(cx + 5, top + 18);
-    targetCtx.stroke();
-
-    targetCtx.font = "600 13px 'IBM Plex Mono', monospace";
-    targetCtx.textBaseline = 'middle';
-
-    targetCtx.textAlign = 'right';
-    targetCtx.fillText('x', left + width - 12, cy - 13);
-
-    targetCtx.textAlign = 'left';
-    targetCtx.fillText('y', cx + 8, top + 14);
-
-    targetCtx.fillStyle = '#64748B';
-    targetCtx.font = "11px 'IBM Plex Mono', monospace";
-    targetCtx.fillText('0', cx + 6, cy + 10);
-
+    targetCtx.drawImage(graph.canvas,left,top,width,height);
     targetCtx.restore();
   }
 
@@ -3912,8 +4313,10 @@
     if (placingScratchGraph) {
       e.preventDefault();
 
+      const placedType = scratchGraphTypeToPlace;
       createScratchGraphAt(e.clientX, e.clientY);
       setScratchGraphPlacementMode(false);
+      if (placedType === 'shape-triangle') pendingTriangleVariant = 'equilateral';
 
       // Este clique serve apenas para posicionar um novo gráfico.
       return;
@@ -4049,6 +4452,7 @@
   scratchPdfNameInput.addEventListener('input', scheduleScratchSave);
   window.addEventListener('beforeunload', saveScratchStateNow);
   loadScratchState();
+  updateScratchZoomUi();
 })();
 </script>
 </body>
