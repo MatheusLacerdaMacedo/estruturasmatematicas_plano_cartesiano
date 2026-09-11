@@ -574,6 +574,22 @@
   .empty-mini{ color:var(--ink-soft); font-size:.76rem; padding:8px 0; }
   .intersection-list{ margin-top:10px; font-size:.74rem; line-height:1.65; color:var(--ink-soft); }
 
+  /* ---------- APOIO TRIGONOMÉTRICO ---------- */
+  .trig-study-panel{
+    display:grid; gap:10px; padding:11px; border:1px solid var(--paper-line);
+    border-radius:var(--radius); background:var(--blueprint-deep);
+  }
+  .trig-unit-toggle{ display:flex; gap:6px; }
+  .trig-unit-toggle button{ flex:1; padding:6px 8px; font-size:.72rem; }
+  .trig-unit-toggle button.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .trig-angle-table{ width:100%; border-collapse:collapse; font-size:.68rem; }
+  .trig-angle-table th,.trig-angle-table td{ padding:5px 4px; text-align:center; border-bottom:1px solid var(--paper-line); }
+  .trig-angle-table th{ color:var(--ink); font-weight:700; }
+  .trig-angle-table td{ color:var(--ink-soft); }
+  .trig-formula-note{ font-size:.69rem; line-height:1.55; color:var(--ink-soft); }
+  .trig-formula-note b{ color:var(--ink); }
+  .scratch-trig-legend{ font-size:.69rem; color:var(--ink-soft); }
+
 
   /* ---------- LAYOUT MINIMALISTA ---------- */
   .minimal-panel-bar{ display:none; }
@@ -692,7 +708,7 @@
   <div class="brand-copy">
     <p class="eyebrow">Ferramenta de Estudo Avançada</p>
     <h1>Plano Cartesiano — Funções</h1>
-    <p>Estude funções do 1º e 2º grau. Marque pontos, controle o domínio e analise tabelas de valores instantâneas.</p>
+    <p>Estude funções do 1º, 2º grau e trigonométricas. Marque pontos, compare curvas, ângulos e analise valores instantaneamente.</p>
   </div>
   <div class="header-actions">
     <button id="minimal-layout-toggle" class="secondary" title="Alternar layout minimalista (L)">▣ Minimalista</button>
@@ -722,8 +738,8 @@
       <span class="project-version">v1.2.1</span>
       <span class="project-author"><span class="project-author-prefix">Desenvolvido por </span>Matheus</span>
       <!-- Substitua pelos URLs dos seus perfis pessoais quando desejar. -->
-      <a href="https://www.linkedin.com/in/matheus-lacerda-macedo/" target="_blank" rel="noopener noreferrer" title="LinkedIn do autor">LinkedIn</a>
-      <a href="https://github.com/MatheusLacerdaMacedo" target="_blank" rel="noopener noreferrer" title="GitHub do autor">GitHub</a>
+      <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" title="LinkedIn do autor">LinkedIn</a>
+      <a href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub do autor">GitHub</a>
     </div>
   </div>
 
@@ -739,6 +755,28 @@
       <div class="interaction-tools" style="margin-bottom: 0;">
         <button class="func-toggle active" data-val="linear">1º Grau (Reta)</button>
         <button class="func-toggle" data-val="quadratic">2º Grau (Parábola)</button>
+        <button class="func-toggle" data-val="trigonometric">Trigonométrica</button>
+      </div>
+    </div>
+
+    <div class="block minimal-advanced" id="trig-study-section" style="display:none;">
+      <h2>Referência Trigonométrica</h2>
+      <div class="trig-study-panel">
+        <div class="trig-unit-toggle" aria-label="Unidade visual dos ângulos">
+          <button class="secondary angle-unit-btn active" data-angle-unit="radians">π Radianos</button>
+          <button class="secondary angle-unit-btn" data-angle-unit="degrees">° Graus</button>
+        </div>
+        <div class="trig-formula-note">
+          Forma geral: <b>y = A·trig(Bx + C) + D</b><br>
+          sen/cos: período <b>2π/|B|</b> · tan: período <b>π/|B|</b> · deslocamento horizontal <b>−C/B</b>.
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="trig-angle-table" aria-label="Tabela de ângulos notáveis">
+            <thead><tr><th id="trig-angle-unit-header">Ângulo</th><th>sen</th><th>cos</th><th>tan</th></tr></thead>
+            <tbody id="trig-angle-table-body"></tbody>
+          </table>
+        </div>
+        <div class="trig-formula-note">O eixo horizontal mostra ângulos notáveis automaticamente. Também é aceito <b>30°</b>, <b>45°</b>, <b>90°</b> etc. dentro do argumento.</div>
       </div>
     </div>
 
@@ -783,7 +821,7 @@
         <input type="text" id="eq-input" placeholder="ex: L(t) = -50t + 7t - 5" style="flex:1; font-size:1rem; padding: 8px;">
       </div>
       <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato e use apenas uma variável.</div>
-      <p class="hint minimal-advanced-block" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z e frações.</p>
+      <p class="hint minimal-advanced-block" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z, frações e funções sen/cos/tan.</p>
       
       <!-- Domínio -->
       <div class="domain-row minimal-advanced-flex">
@@ -939,6 +977,14 @@
     </div>
     <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
     <div class="tool-row">
+      <span class="row-label">Trigonometria</span>
+      <button id="add-scratch-trig-axis" class="tool-btn" title="Inserir eixos preparados em múltiplos de π">π Eixos</button>
+      <button id="add-scratch-unit-circle" class="tool-btn" title="Inserir círculo trigonométrico">◯ Círculo</button>
+      <button id="add-scratch-angle-table" class="tool-btn" title="Inserir tabela de ângulos notáveis">▦ Ângulos</button>
+      <span class="scratch-trig-legend">desenhe normalmente por cima</span>
+    </div>
+    <div style="width: 1px; height: 30px; background: var(--paper-line); margin: 0 10px;"></div>
+    <div class="tool-row">
       <span class="row-label">Prints</span>
       <span class="scratch-paste-hint">Ctrl+V para colar · ✥ arrasta</span>
       <button id="remove-all-scratch-prints" class="tool-btn">🗑 Remover prints</button>
@@ -970,8 +1016,10 @@
       <div><span class="help-key">P</span> — Estudo / Prova</div><div><span class="help-key">L</span> — Layout minimalista</div>
       <div><span class="help-key">?</span> — Abrir ajuda</div><div><span class="help-key">Ctrl+E</span> — Exportar plano</div>
       <div><span class="help-key">Ctrl+Z</span> — Desfazer desenho</div><div><span class="help-key">Mais opções</span> — Exibe controles avançados no layout minimalista</div>
+      <div><span class="help-key">Trigonometria</span> — sen/sin, cos, tan/tg; use π ou pi</div><div><span class="help-key">Graus</span> — constantes como 30°, 45°, 60° e 90° são aceitas no argumento</div>
     </div>
     <p class="hint"><b>Múltiplas funções:</b> escreva uma função e clique em “Adicionar função”. Use os botões 👁, selecionar e ✕ para gerenciar cada gráfico.</p>
+    <p class="hint"><b>Trigonometria:</b> aceita sen/sin, cos e tan/tg em radianos. Exemplos: <b>f(x)=sen(x)</b>, <b>g(t)=2cos(3t)-1</b>, <b>h(x)=tan(x/2)</b> e <b>p(x)=sen(x+pi/2)</b>.</p>
     <p class="hint"><b>Modo prova:</b> oculta tabela, análise e interseções automáticas sem apagar os gráficos.</p>
     <div class="btn-row"><button id="help-close-btn">Fechar</button></div>
   </div>
@@ -1029,7 +1077,7 @@
 
   const points = []; 
   let currentMode = 'point'; 
-  let funcType = 'linear'; // 'linear' ou 'quadratic'
+  let funcType = 'linear'; // 'linear', 'quadratic' ou 'trigonometric'
   let mathModel = null;
   let currentVariable = 'x';
   let currentFunctionName = null;
@@ -1046,6 +1094,7 @@
   let examMode = false;
   let minimalLayout = false;
   let minimalExpanded = false;
+  let angleDisplayUnit = 'radians';
   let appSaveTimer = null;
   let pendingRestoredView = null;
 
@@ -1086,10 +1135,25 @@
 
   function evaluateModel(model, x){
     if (!model) return NaN;
-    return model.type === 'linear' ? model.m * x + model.b : model.a * x * x + model.b * x + model.c;
+    if (model.type === 'linear') return model.m * x + model.b;
+    if (model.type === 'quadratic') return model.a * x * x + model.b * x + model.c;
+    if (model.type === 'trigonometric') {
+      const argument = model.frequency * x + model.phase;
+      let base;
+      if (model.fn === 'sin') base = Math.sin(argument);
+      else if (model.fn === 'cos') base = Math.cos(argument);
+      else if (model.fn === 'tan') {
+        // Não liga os dois lados de uma assíntota da tangente.
+        if (Math.abs(Math.cos(argument)) < 1e-10) return NaN;
+        base = Math.tan(argument);
+      } else return NaN;
+      return model.amplitude * base + model.offset;
+    }
+    return NaN;
   }
 
   function modelABC(model){
+    if (!model || model.type === 'trigonometric') return null;
     return model.type === 'linear' ? {a:0,b:model.m,c:model.b} : {a:model.a,b:model.b,c:model.c};
   }
 
@@ -1103,6 +1167,71 @@
     return String(rounded).replace('.', ',');
   }
 
+  function formatPiAngle(value){
+    if (!Number.isFinite(value)) return '—';
+    if (Math.abs(value) < 1e-10) return '0';
+    const ratio=value/Math.PI;
+    let best=null;
+    for(let den=1;den<=24;den++){
+      const num=Math.round(ratio*den);
+      const error=Math.abs(ratio-num/den);
+      if(!best||error<best.error)best={num,den,error};
+    }
+    if(best&&best.error<1e-6){
+      const g=gcd(Math.abs(best.num),best.den);let n=best.num/g,d=best.den/g;
+      const sign=n<0?'-':'';n=Math.abs(n);
+      if(d===1)return n===1?`${sign}π`:`${sign}${n}π`;
+      return n===1?`${sign}π/${d}`:`${sign}${n}π/${d}`;
+    }
+    return `${formatNumber(value)} rad`;
+  }
+
+  function formatAngleValue(value, unit=angleDisplayUnit){
+    if(unit==='degrees')return `${formatNumber(value*180/Math.PI)}°`;
+    return formatPiAngle(value);
+  }
+
+  function trigIsVisible(){
+    return (mathModel&&mathModel.type==='trigonometric') || graphedFunctions.some(f=>f.visible&&f.model&&f.model.type==='trigonometric');
+  }
+
+  function buildTrigReferenceTable(){
+    const host=document.getElementById('trig-angle-table-body');if(!host)return;
+    const angles=[
+      [0,'0','1','0'],[Math.PI/6,'1/2','√3/2','√3/3'],[Math.PI/4,'√2/2','√2/2','1'],
+      [Math.PI/3,'√3/2','1/2','√3'],[Math.PI/2,'1','0','indef.'],[Math.PI,'0','−1','0'],
+      [3*Math.PI/2,'−1','0','indef.'],[2*Math.PI,'0','1','0']
+    ];
+    host.innerHTML=angles.map(([a,si,co,ta])=>`<tr><td>${formatAngleValue(a)}</td><td>${si}</td><td>${co}</td><td>${ta}</td></tr>`).join('');
+    const header=document.getElementById('trig-angle-unit-header');if(header)header.textContent=angleDisplayUnit==='degrees'?'Ângulo (°)':'Ângulo (rad)';
+    document.querySelectorAll('.angle-unit-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.angleUnit===angleDisplayUnit));
+  }
+
+  function setAngleDisplayUnit(unit, save=true){
+    angleDisplayUnit=unit==='degrees'?'degrees':'radians';
+    buildTrigReferenceTable();
+    refresh();
+    if(save)scheduleSaveAppState();
+  }
+
+  function updateTrigStudyVisibility(){
+    const section=document.getElementById('trig-study-section');
+    if(section)section.style.display=funcType==='trigonometric'?'block':'none';
+    buildTrigReferenceTable();
+  }
+
+  function formatTrigArgument(model, variable){
+    const frequency = Number(model.frequency);
+    const phase = Number(model.phase);
+    let arg = '';
+    if (Math.abs(frequency - 1) < 1e-12) arg = variable;
+    else if (Math.abs(frequency + 1) < 1e-12) arg = `-${variable}`;
+    else if (Math.abs(frequency) < 1e-12) arg = '0';
+    else arg = `${formatNumber(frequency)}${variable}`;
+    if (Math.abs(phase) > 1e-12) arg += phase > 0 ? ` + ${formatNumber(phase)}` : ` - ${formatNumber(Math.abs(phase))}`;
+    return arg;
+  }
+
   function formatSeriesEquation(series){
     const v = series.variable || 'x';
     const dep = dependentLabelFor(series);
@@ -1113,10 +1242,24 @@
       if (Math.abs(m.b) > 1e-12 || !expr) expr += `${expr ? (m.b >= 0 ? ' + ' : ' - ') : (m.b < 0 ? '-' : '')}${formatNumber(Math.abs(m.b))}`;
       return `${dep} = ${expr}`;
     }
-    let expr = m.a === 1 ? `${v}²` : m.a === -1 ? `-${v}²` : `${formatNumber(m.a)}${v}²`;
-    if (Math.abs(m.b) > 1e-12) expr += m.b > 0 ? ` + ${m.b === 1 ? v : `${formatNumber(m.b)}${v}`}` : ` - ${m.b === -1 ? v : `${formatNumber(Math.abs(m.b))}${v}`}`;
-    if (Math.abs(m.c) > 1e-12) expr += m.c > 0 ? ` + ${formatNumber(m.c)}` : ` - ${formatNumber(Math.abs(m.c))}`;
-    return `${dep} = ${expr}`;
+    if (m.type === 'quadratic') {
+      let expr = m.a === 1 ? `${v}²` : m.a === -1 ? `-${v}²` : `${formatNumber(m.a)}${v}²`;
+      if (Math.abs(m.b) > 1e-12) expr += m.b > 0 ? ` + ${m.b === 1 ? v : `${formatNumber(m.b)}${v}`}` : ` - ${m.b === -1 ? v : `${formatNumber(Math.abs(m.b))}${v}`}`;
+      if (Math.abs(m.c) > 1e-12) expr += m.c > 0 ? ` + ${formatNumber(m.c)}` : ` - ${formatNumber(Math.abs(m.c))}`;
+      return `${dep} = ${expr}`;
+    }
+    if (m.type === 'trigonometric') {
+      const fnLabel = m.fn === 'sin' ? 'sen' : m.fn === 'tan' ? 'tan' : 'cos';
+      const arg = formatTrigArgument(m, v);
+      let prefix = '';
+      if (Math.abs(m.amplitude - 1) < 1e-12) prefix = '';
+      else if (Math.abs(m.amplitude + 1) < 1e-12) prefix = '-';
+      else prefix = formatNumber(m.amplitude);
+      let expr = `${prefix}${fnLabel}(${arg})`;
+      if (Math.abs(m.offset) > 1e-12) expr += m.offset > 0 ? ` + ${formatNumber(m.offset)}` : ` - ${formatNumber(Math.abs(m.offset))}`;
+      return `${dep} = ${expr}`;
+    }
+    return `${dep} = ?`;
   }
 
   function getSeriesDomain(series){
@@ -1132,9 +1275,14 @@
   }
 
   function syncFunctionTypeButtons(type){
-    funcType = type === 'quadratic' ? 'quadratic' : 'linear';
+    funcType = ['linear','quadratic','trigonometric'].includes(type) ? type : 'linear';
     document.querySelectorAll('.func-toggle').forEach(b => b.classList.toggle('active', b.dataset.val === funcType));
+    const isTrig = funcType === 'trigonometric';
+    updateTrigStudyVisibility();
     document.getElementById('point-row-3').style.display = funcType === 'quadratic' ? 'flex' : 'none';
+    document.getElementById('points-section').style.display = isTrig ? 'none' : 'block';
+    document.getElementById('mode-point').style.display = isTrig ? 'none' : 'block';
+    if (isTrig && currentMode === 'point') document.getElementById('mode-pan').click();
   }
 
   function makeReferencePoints(model){
@@ -1143,6 +1291,25 @@
       if (Math.abs(model.m) > 1e-9) p.push(Math.abs(model.b) < 1e-9 ? {x:1,y:model.m} : {x:-model.b/model.m,y:0});
       else p.push({x:1,y:model.b});
       return p;
+    }
+    if (model.type === 'trigonometric') {
+      const b = Math.abs(model.frequency) > 1e-12 ? model.frequency : 1;
+      const center = Math.abs(model.frequency) > 1e-12 ? -model.phase / model.frequency : 0;
+      const period = model.fn === 'tan' ? Math.PI / Math.abs(b) : (2 * Math.PI) / Math.abs(b);
+      if (model.fn === 'tan') {
+        return [
+          {x:center-period*0.4,y:evaluateModel(model,center-period*0.4)},
+          {x:center,y:evaluateModel(model,center)},
+          {x:center+period*0.4,y:evaluateModel(model,center+period*0.4)}
+        ];
+      }
+      return [
+        {x:center-period,y:evaluateModel(model,center-period)},
+        {x:center-period/4,y:evaluateModel(model,center-period/4)},
+        {x:center,y:evaluateModel(model,center)},
+        {x:center+period/4,y:evaluateModel(model,center+period/4)},
+        {x:center+period,y:evaluateModel(model,center+period)}
+      ];
     }
     const p = [{x:0,y:model.c}];
     const xv = -model.b/(2*model.a);
@@ -1189,7 +1356,7 @@
     syncFunctionTypeButtons(series.model.type);
     document.getElementById('eq-input').value=series.input||formatSeriesEquation(series);
     domMinInput.value=Number.isFinite(series.domainMin)?series.domainMin:''; domMaxInput.value=Number.isFinite(series.domainMax)?series.domainMax:'';
-    points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));
+    if (series.model.type === 'trigonometric') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));
     updateInputsFromPoints(); updateFunctionIdentityUI(); renderFunctionList();
     if(doRefresh) refresh();
   }
@@ -1201,23 +1368,68 @@
     renderIntersections();
   }
 
+  function addIntersectionHit(hits, x, y, f1, f2){
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!isInsideSeriesDomain(f1,x) || !isInsideSeriesDomain(f2,x)) return;
+    if (!hits.some(h => Math.abs(h.x-x) < 1e-4 && Math.abs(h.y-y) < 1e-4)) hits.push({x,y,f1,f2});
+  }
+
+  function numericIntersections(f1, f2, hits){
+    const d1=getSeriesDomain(f1),d2=getSeriesDomain(f2);
+    const visibleMin=(-originX/unitSize),visibleMax=((cssWidth-originX)/unitSize);
+    let minX=Math.max(visibleMin,d1.min,d2.min),maxX=Math.min(visibleMax,d1.max,d2.max);
+    if(!Number.isFinite(minX)||!Number.isFinite(maxX)||minX>=maxX)return;
+    const samples=Math.max(900,Math.min(5000,Math.round(cssWidth*2.5)));
+    const step=(maxX-minX)/samples;
+    const diff=x=>evaluateModel(f1.model,x)-evaluateModel(f2.model,x);
+    let prevX=minX,prevV=diff(prevX);
+    for(let i=1;i<=samples;i++){
+      const x=i===samples?maxX:minX+i*step,v=diff(x);
+      const prevOk=Number.isFinite(prevV)&&Math.abs(prevV)<1e5;
+      const curOk=Number.isFinite(v)&&Math.abs(v)<1e5;
+      if(curOk && Math.abs(v)<1e-4){const y=evaluateModel(f1.model,x);addIntersectionHit(hits,x,y,f1,f2);}
+      if(prevOk&&curOk&&prevV*v<0){
+        let lo=prevX,hi=x,flo=prevV,fhi=v;
+        for(let k=0;k<45;k++){
+          const mid=(lo+hi)/2,fm=diff(mid);
+          if(!Number.isFinite(fm)||Math.abs(fm)>1e8){lo=mid;flo=fm;continue;}
+          if(flo*fm<=0){hi=mid;fhi=fm;}else{lo=mid;flo=fm;}
+        }
+        const root=(lo+hi)/2,fr=diff(root);
+        // Uma troca de sinal em uma assíntota da tangente não é interseção.
+        if(Number.isFinite(fr)&&Math.abs(fr)<1e-5){
+          const y=evaluateModel(f1.model,root);
+          if(Number.isFinite(y)&&Math.abs(y)<1e6)addIntersectionHit(hits,root,y,f1,f2);
+        }
+      }
+      prevX=x;prevV=v;
+    }
+  }
+
   function computeIntersections(){
     const visible=graphedFunctions.filter(f=>f.visible); const hits=[];
     for(let i=0;i<visible.length;i++) for(let j=i+1;j<visible.length;j++){
-      const f1=visible[i],f2=visible[j],A=modelABC(f1.model),B=modelABC(f2.model);
-      const a=A.a-B.a,b=A.b-B.b,c=A.c-B.c; let roots=[];
-      if(Math.abs(a)<1e-10){ if(Math.abs(b)>1e-10)roots=[-c/b]; }
-      else { const d=b*b-4*a*c; if(d>=-1e-10){const sd=Math.sqrt(Math.max(0,d));roots=[(-b+sd)/(2*a)];if(sd>1e-8)roots.push((-b-sd)/(2*a));} }
-      roots.forEach(x=>{ if(!Number.isFinite(x)||!isInsideSeriesDomain(f1,x)||!isInsideSeriesDomain(f2,x))return; const y=evaluateModel(f1.model,x); if(!Number.isFinite(y))return; if(!hits.some(h=>Math.hypot(h.x-x,h.y-y)<1e-5))hits.push({x,y,f1,f2}); });
+      const f1=visible[i],f2=visible[j];
+      const A=modelABC(f1.model),B=modelABC(f2.model);
+      if(A&&B){
+        const a=A.a-B.a,b=A.b-B.b,c=A.c-B.c; let roots=[];
+        if(Math.abs(a)<1e-10){ if(Math.abs(b)>1e-10)roots=[-c/b]; }
+        else { const d=b*b-4*a*c; if(d>=-1e-10){const sd=Math.sqrt(Math.max(0,d));roots=[(-b+sd)/(2*a)];if(sd>1e-8)roots.push((-b-sd)/(2*a));} }
+        roots.forEach(x=>{const y=evaluateModel(f1.model,x);addIntersectionHit(hits,x,y,f1,f2);});
+      }else{
+        numericIntersections(f1,f2,hits);
+      }
     }
-    return hits;
+    return hits.sort((a,b)=>a.x-b.x);
   }
 
   function renderIntersections(){
     const host=document.getElementById('intersection-list'); if(!host)return;
     if(examMode){host.innerHTML='';return;}
     const hits=computeIntersections();
-    host.innerHTML=hits.length?`<b>Interseções automáticas:</b><br>${hits.map((h,i)=>`I${i+1}: (${formatNumber(h.x)}, ${formatNumber(h.y)})`).join('<br>')}`:(graphedFunctions.filter(f=>f.visible).length>1?'Nenhuma interseção real encontrada entre as funções visíveis.':'');
+    const hasTrig=graphedFunctions.some(f=>f.visible&&f.model.type==='trigonometric');
+    const title=hasTrig?'Interseções automáticas na área visível:':'Interseções automáticas:';
+    host.innerHTML=hits.length?`<b>${title}</b><br>${hits.map((h,i)=>`I${i+1}: (${formatNumber(h.x)}, ${formatNumber(h.y)})`).join('<br>')}`:(graphedFunctions.filter(f=>f.visible).length>1?'Nenhuma interseção real encontrada entre as funções visíveis.':'');
   }
 
   function drawFunctionSeries(series, screenMinX, screenMaxX){
@@ -1226,9 +1438,20 @@
     ctx.strokeStyle=series.color; ctx.lineWidth=series.id===activeFunctionId?3.1:2.35; ctx.beginPath();
     if(series.model.type==='linear'){
       const a=toScreen(minX,evaluateModel(series.model,minX)),b=toScreen(maxX,evaluateModel(series.model,maxX));ctx.moveTo(a.sx,a.sy);ctx.lineTo(b.sx,b.sy);
-    }else{
+    }else if(series.model.type==='quadratic'){
       const steps=Math.max(180,Math.min(700,Math.round(cssWidth/2))); const dx=(maxX-minX)/steps || 1;
       for(let i=0;i<=steps;i++){const x=i===steps?maxX:minX+i*dx,y=evaluateModel(series.model,x),p=toScreen(x,y); if(i===0)ctx.moveTo(p.sx,p.sy);else ctx.lineTo(p.sx,p.sy);}
+    }else if(series.model.type==='trigonometric'){
+      const steps=Math.max(700,Math.min(5000,Math.round(cssWidth*2.5))); const dx=(maxX-minX)/steps || 1;
+      let drawingSegment=false,lastSy=null;
+      for(let i=0;i<=steps;i++){
+        const x=i===steps?maxX:minX+i*dx,y=evaluateModel(series.model,x);
+        if(!Number.isFinite(y)||Math.abs(y)>1e6){drawingSegment=false;lastSy=null;continue;}
+        const p=toScreen(x,y);
+        const jump=lastSy!==null&&Math.abs(p.sy-lastSy)>cssHeight*1.25;
+        if(!drawingSegment||jump){ctx.moveTo(p.sx,p.sy);drawingSegment=true;}else ctx.lineTo(p.sx,p.sy);
+        lastSy=p.sy;
+      }
     }
     ctx.stroke();
   }
@@ -1287,7 +1510,7 @@
 
   function serializableFunctions(){return graphedFunctions.map(f=>({id:f.id,input:f.input,model:f.model,variable:f.variable,functionName:f.functionName,color:f.color,visible:f.visible,domainMin:f.domainMin,domainMax:f.domainMax}));}
   function saveAppStateNow(){
-    const state={version:2,functions:serializableFunctions(),history:functionHistory,activeFunctionId,view:{unitSize,mathCenterX,mathCenterY},planeStrokes:clonePlaneStrokes(),mainDrawColor,mainPenSizePx,mainEraserRadiusPx,examMode,minimalLayout,minimalExpanded,theme:document.body.classList.contains('dark-theme')?'dark':'light',funcType,currentVariable,currentFunctionName,domainMin:domMinInput.value,domainMax:domMaxInput.value};
+    const state={version:2,functions:serializableFunctions(),history:functionHistory,activeFunctionId,view:{unitSize,mathCenterX,mathCenterY},planeStrokes:clonePlaneStrokes(),mainDrawColor,mainPenSizePx,mainEraserRadiusPx,examMode,minimalLayout,minimalExpanded,angleDisplayUnit,theme:document.body.classList.contains('dark-theme')?'dark':'light',funcType,currentVariable,currentFunctionName,domainMin:domMinInput.value,domainMax:domMaxInput.value};
     try{localStorage.setItem(APP_STORAGE_KEY,JSON.stringify(state));}
     catch(err){
       // Se muitos traços excederem a cota, preserva funções, histórico e configurações.
@@ -1305,7 +1528,7 @@
       if(st.theme==='dark')document.body.classList.add('dark-theme');else document.body.classList.remove('dark-theme');themeBtn.textContent=document.body.classList.contains('dark-theme')?'☀️ Claro':'🌙 Escuro';
       document.getElementById('main-draw-color').value=mainDrawColor;document.getElementById('main-pen-size').value=mainPenSizePx;document.getElementById('main-pen-size-label').textContent=mainPenSizePx+'px';document.getElementById('main-eraser-size').value=mainEraserRadiusPx;document.getElementById('main-eraser-size-label').textContent=mainEraserRadiusPx+'px';
       document.querySelectorAll('.main-color-swatch').forEach(b=>b.classList.toggle('active',b.dataset.color.toLowerCase()===mainDrawColor.toLowerCase()));
-      domMinInput.value=st.domainMin||'';domMaxInput.value=st.domainMax||'';setExamMode(!!st.examMode);minimalExpanded=!!st.minimalExpanded;setMinimalLayout(!!st.minimalLayout,false);
+      domMinInput.value=st.domainMin||'';domMaxInput.value=st.domainMax||'';angleDisplayUnit=st.angleDisplayUnit==='degrees'?'degrees':'radians';buildTrigReferenceTable();setExamMode(!!st.examMode);minimalExpanded=!!st.minimalExpanded;setMinimalLayout(!!st.minimalLayout,false);
       if(activeFunctionId&&graphedFunctions.some(f=>f.id===activeFunctionId))selectFunction(activeFunctionId,false);else if(graphedFunctions.length)selectFunction(graphedFunctions[graphedFunctions.length-1].id,false);
       else {currentVariable=st.currentVariable||'x';currentFunctionName=st.currentFunctionName||null;syncFunctionTypeButtons(st.funcType||'linear');updateFunctionIdentityUI();}
       renderFunctionHistory();renderFunctionList();
@@ -1319,19 +1542,25 @@
         e.target.classList.add('active');
         funcType = e.target.dataset.val;
 
-        document.getElementById('points-section').style.display = 'block';
-        document.getElementById('mode-point').style.display = 'block';
+        document.getElementById('points-section').style.display = funcType === 'trigonometric' ? 'none' : 'block';
+        document.getElementById('mode-point').style.display = funcType === 'trigonometric' ? 'none' : 'block';
+        updateTrigStudyVisibility();
 
         if (funcType === 'linear') {
             document.getElementById('point-row-3').style.display = 'none';
             document.getElementById('points-hint').innerText = 'Marque dois pontos no plano ou informe as coordenadas.';
             document.getElementById('eq-input').placeholder = 'ex: L(t) = -50t + 7t - 5';
             document.getElementById('hint-format').innerText = 'f(x) = mx + b';
-        } else {
+        } else if (funcType === 'quadratic') {
             document.getElementById('point-row-3').style.display = 'flex';
             document.getElementById('points-hint').innerText = 'Marque três pontos com valores diferentes no eixo horizontal para formar a parábola.';
             document.getElementById('eq-input').placeholder = 'ex: P(u) = u² - 4u + 4';
             document.getElementById('hint-format').innerText = 'f(x) = ax² + bx + c';
+        } else {
+            document.getElementById('point-row-3').style.display = 'none';
+            document.getElementById('eq-input').placeholder = 'ex: f(x) = 2sen(3x + pi/2) - 1';
+            document.getElementById('hint-format').innerText = 'f(x) = A·sen(Bx + C) + D';
+            if (currentMode === 'point') document.getElementById('mode-pan').click();
         }
         resetFunctionIdentity();
         activeFunctionId = null;
@@ -1489,12 +1718,124 @@
   //   y = 2x - 3
   //   L(t) = -50t + 7t - 5
   //   P(u) = u² - 4u + 4
+  function parseSafeConstant(raw){
+    let value=String(raw??'').trim().toLowerCase().replace(/π/g,'pi').replace(/\s+/g,'');
+    if(value===''||value==='+')return 1;
+    if(value==='-')return -1;
+    // Somente números, pi, *, /, + e -: sem eval arbitrário.
+    if(!/^[0-9pi+\-*/.]+$/.test(value))return NaN;
+    value=value.replace(/(\d|pi)(?=pi)/g,'$1*').replace(/pi/g,String(Math.PI));
+    // Insere multiplicação em casos como 2pi que restarem após a troca.
+    value=value.replace(/(\d|\))(\()/g,'$1*$2');
+    if(!/^[0-9+\-*/.]+$/.test(value))return NaN;
+    try{
+      // A expressão já foi reduzida a caracteres aritméticos seguros.
+      const result=Function(`"use strict"; return (${value});`)();
+      return Number.isFinite(result)?result:NaN;
+    }catch(_){return NaN;}
+  }
+
+  function parseAngleConstant(raw){
+    const text=String(raw??'').trim();
+    if(text.endsWith('°')){
+      const deg=parseSafeConstant(text.slice(0,-1));
+      return Number.isFinite(deg)?deg*Math.PI/180:NaN;
+    }
+    return parseSafeConstant(text);
+  }
+
+  function parseTrigArgument(raw, variable){
+    let expr=String(raw||'').toLowerCase().replace(/π/g,'pi').replace(/\s+/g,'').replace(/−/g,'-');
+    if(!expr)return null;
+    const escaped=variable.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    // Separa + e - sem destruir o sinal inicial.
+    const terms=expr.replace(/-/g,'+-').replace(/^\+/,'').split('+').filter(Boolean);
+    let frequency=0,phase=0,variableTerms=0;
+    for(let term of terms){
+      if(new RegExp(escaped,'g').test(term)){
+        if((term.match(new RegExp(escaped,'g'))||[]).length!==1)return null;
+        variableTerms++;
+        let coeff=term.replace(new RegExp(escaped,'g'),'');
+        if(coeff.endsWith('/'))return null;
+        if(coeff.startsWith('/'))coeff='1'+coeff;
+        else if(coeff.startsWith('-/'))coeff='-1'+coeff.slice(1);
+        if(coeff===''||coeff==='+')frequency+=1;
+        else if(coeff==='-')frequency-=1;
+        else{
+          coeff=coeff.replace(/\*$/,'');
+          const c=parseSafeConstant(coeff);
+          if(!Number.isFinite(c))return null;
+          frequency+=c;
+        }
+      }else{
+        const c=parseAngleConstant(term);
+        if(!Number.isFinite(c))return null;
+        phase+=c;
+      }
+    }
+    if(variableTerms>1)return null;
+    return {frequency,phase};
+  }
+
+  function parseTrigExpression(expression, declaredVariable, variableDisplay, functionName){
+    let normalized=String(expression||'').toLowerCase().replace(/π/g,'pi').replace(/−/g,'-').replace(/\s+/g,'');
+    normalized=normalized.replace(/sen/g,'sin').replace(/tg/g,'tan');
+    const fnMatch=normalized.match(/^(.*?)(sin|cos|tan)\(/);
+    if(!fnMatch)return null;
+    const amplitudeText=fnMatch[1];
+    const fn=fnMatch[2];
+    const openIndex=fnMatch[0].length-1;
+    let depth=0,closeIndex=-1;
+    for(let i=openIndex;i<normalized.length;i++){
+      if(normalized[i]==='(')depth++;
+      else if(normalized[i]===')'){
+        depth--;
+        if(depth===0){closeIndex=i;break;}
+      }
+    }
+    if(closeIndex<0)return null;
+    const argumentText=normalized.slice(openIndex+1,closeIndex);
+    const suffix=normalized.slice(closeIndex+1);
+    if(suffix.includes('sin')||suffix.includes('cos')||suffix.includes('tan')||suffix.includes('(')||suffix.includes(')'))return null;
+
+    let amplitude;
+    if(amplitudeText===''||amplitudeText==='+')amplitude=1;
+    else if(amplitudeText==='-')amplitude=-1;
+    else amplitude=parseSafeConstant(amplitudeText.replace(/\*$/,''));
+    if(!Number.isFinite(amplitude))return null;
+
+    let offset=0;
+    if(suffix){offset=parseSafeConstant(suffix);if(!Number.isFinite(offset))return null;}
+
+    let variable=declaredVariable;
+    if(!variable){
+      const withoutPi=argumentText.replace(/pi/g,'');
+      const letters=withoutPi.match(/[a-z]/g)||[];
+      const unique=[...new Set(letters)];
+      if(unique.length>1)return null;
+      variable=unique[0]||'x';
+      variableDisplay=variable;
+    }else{
+      const withoutPi=argumentText.replace(/pi/g,'');
+      const letters=withoutPi.match(/[a-z]/g)||[];
+      if(letters.some(letter=>letter!==variable))return null;
+    }
+
+    const arg=parseTrigArgument(argumentText,variable);
+    if(!arg)return null;
+    return {type:'trigonometric',fn,amplitude,frequency:arg.frequency,phase:arg.phase,offset,variable:variableDisplay||variable,functionName};
+  }
+
+  // PARSER DE FUNÇÕES COM VARIÁVEL AUTOMÁTICA
+  // Polinomiais: f(x)=2x-3, P(u)=u²-4u+4
+  // Trigonométricas: f(x)=sen(x), g(t)=2cos(3t)-1, h(x)=tan(x/2), p(x)=sen(x+30°)
   function parseEquation(input, type) {
     let compact = String(input || '')
       .replace(/,/g, '.')
       .replace(/\s+/g, '')
       .replace(/²/g, '^2')
-      .replace(/\*\*/g, '^');
+      .replace(/\*\*/g, '^')
+      .replace(/−/g,'-');
 
     if (!compact) return null;
 
@@ -1521,6 +1862,12 @@
       }
     }
 
+    // Detecta trigonometria automaticamente, mesmo que o botão ainda esteja em outro tipo.
+    if (/(?:sen|sin|cos|tan|tg)\s*\(/i.test(expression)) {
+      return parseTrigExpression(expression,declaredVariable,variableDisplay,functionName);
+    }
+    if(type==='trigonometric') return null;
+
     let normalized = expression.toLowerCase();
     const letters = normalized.match(/[a-z]/g) || [];
     const uniqueLetters = [...new Set(letters)];
@@ -1534,16 +1881,12 @@
       return null;
     }
 
-    // Internamente todo o cálculo continua usando x; somente a interface mantém
-    // a letra escolhida pelo usuário.
     const escapedVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     normalized = normalized
       .replace(new RegExp(`${escapedVariable}\\^2`, 'g'), 'x^2')
       .replace(new RegExp(escapedVariable, 'g'), 'x');
 
     if (!/^[0-9x+\-*/.^]+$/.test(normalized)) return null;
-
-    // Separa os termos preservando o sinal. Ex.: -50x+7x-5 -> -50x, 7x, -5
     const cleanEq = normalized.replace(/-/g, '+-').replace(/^\+/, '');
     const terms = cleanEq.split('+').filter(Boolean);
     if (!terms.length) return null;
@@ -1552,7 +1895,6 @@
       const value = raw.replace(/\*/g, '');
       if (value === '' || value === '+') return 1;
       if (value === '-') return -1;
-
       if (value.includes('/')) {
         const parts = value.split('/');
         if (parts.length !== 2) return NaN;
@@ -1561,17 +1903,14 @@
         if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return NaN;
         return numerator / denominator;
       }
-
       if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) return NaN;
       return Number(value);
     }
 
     let a = 0, b = 0, c = 0;
-
     for (const term of terms) {
       let degree = 0;
       let coefficientText = term;
-
       if (term.includes('x^2')) {
         if ((term.match(/x\^2/g) || []).length !== 1) return null;
         coefficientText = term.replace('x^2', '');
@@ -1583,31 +1922,21 @@
         if (coefficientText.includes('^')) return null;
         degree = 1;
       } else {
-        // Multiplicação entre constantes não faz parte do formato polinomial aceito.
         if (term.includes('*') || term.includes('^')) return null;
       }
-
       const coefficient = parseCoefficient(coefficientText);
       if (!Number.isFinite(coefficient)) return null;
-
       if (degree === 2) a += coefficient;
       else if (degree === 1) b += coefficient;
       else c += coefficient;
     }
 
-    const metadata = {
-      variable: variableDisplay || variable,
-      functionName
-    };
-
+    const metadata = {variable: variableDisplay || variable,functionName};
     if (type === 'linear') {
       if (Math.abs(a) > 1e-12) return null;
       return { type: 'linear', m: b, b: c, ...metadata };
     }
-
-    if (Math.abs(a) <= 1e-12) {
-      return { type: 'linear', m: b, b: c, ...metadata };
-    }
+    if (Math.abs(a) <= 1e-12) return { type: 'linear', m: b, b: c, ...metadata };
     return { type: 'quadratic', a, b, c, ...metadata };
   }
 
@@ -1622,7 +1951,7 @@
     const series={id:++functionIdCounter,input:val.trim(),model:{...parsed},variable:currentVariable,functionName:currentFunctionName,color:FUNCTION_COLORS[(functionIdCounter-1)%FUNCTION_COLORS.length],visible:true,domainMin:domMinInput.value===''?null:Number(domMinInput.value),domainMax:domMaxInput.value===''?null:Number(domMaxInput.value)};
     delete series.model.variable;delete series.model.functionName;
     graphedFunctions.push(series);activeFunctionId=series.id;
-    points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));updateInputsFromPoints();
+    if (series.model.type === 'trigonometric') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));updateInputsFromPoints();
     addHistoryEntry(val.trim(),series.model.type);renderFunctionList();focusOnPoints(makeReferencePoints(series.model));refresh();
   });
 
@@ -1644,6 +1973,48 @@
       const tc = getThemeColors(); ctx.fillStyle = tc.ink;
       ctx.font = `600 11px 'IBM Plex Mono', monospace`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
       ctx.fillText(`${label}(${x.toFixed(1).replace('.0','').replace('.',',')}, ${y.toFixed(1).replace('.0','').replace('.',',')})`, pt.sx + 8, pt.sy - 6);
+  }
+
+  function drawTrigAngleScale(screenMinX,screenMaxX,tc){
+    const baseStep=Math.PI/6;
+    const pxPerBase=baseStep*unitSize;
+    const labelEvery=pxPerBase>=62?1:pxPerBase>=34?2:pxPerBase>=21?3:6;
+    const start=Math.floor(screenMinX/baseStep);
+    const end=Math.ceil(screenMaxX/baseStep);
+    const y=Math.max(5,Math.min(originY+6,cssHeight-22));
+    ctx.save();
+    ctx.font=`10px 'IBM Plex Mono', monospace`;ctx.textAlign='center';ctx.textBaseline='top';
+    for(let k=start;k<=end;k++){
+      if(k===0)continue;
+      const value=k*baseStep,sx=originX+value*unitSize;if(sx<0||sx>cssWidth)continue;
+      if(k%3===0){ctx.strokeStyle='rgba(128,128,128,.16)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,cssHeight);ctx.stroke();}
+      if(originY>=0&&originY<=cssHeight){ctx.strokeStyle=tc.axis;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,originY-4);ctx.lineTo(sx,originY+4);ctx.stroke();}
+      if(k%labelEvery===0){ctx.fillStyle=tc.inkSoft;ctx.fillText(formatAngleValue(value),sx,y);}
+    }
+    ctx.restore();
+  }
+
+  function drawSelectedTangentAsymptotes(screenMinX,screenMaxX,tc){
+    const series=graphedFunctions.find(f=>f.id===activeFunctionId&&f.visible&&f.model&&f.model.type==='trigonometric'&&f.model.fn==='tan');
+    if(!series||Math.abs(series.model.frequency)<1e-12)return;
+    const b=series.model.frequency,c=series.model.phase;
+    const a1=b*screenMinX+c,a2=b*screenMaxX+c,amin=Math.min(a1,a2),amax=Math.max(a1,a2);
+    const kMin=Math.ceil((amin-Math.PI/2)/Math.PI)-1;
+    const kMax=Math.floor((amax-Math.PI/2)/Math.PI)+1;
+    ctx.save();ctx.setLineDash([6,5]);ctx.lineWidth=1;ctx.strokeStyle=tc.inkSoft;ctx.globalAlpha=.42;
+    for(let k=kMin;k<=kMax;k++){const x=(Math.PI/2+k*Math.PI-c)/b;if(x<screenMinX||x>screenMaxX)continue;const sx=originX+x*unitSize;ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,cssHeight);ctx.stroke();}
+    ctx.restore();
+  }
+
+  function drawSelectedTrigKeyPoints(screenMinX,screenMaxX,tc){
+    if(examMode)return;
+    const series=graphedFunctions.find(f=>f.id===activeFunctionId&&f.visible&&f.model&&f.model.type==='trigonometric');
+    if(!series||Math.abs(series.model.frequency)<1e-12)return;
+    const m=series.model,shift=-m.phase/m.frequency,period=(m.fn==='tan'?Math.PI:2*Math.PI)/Math.abs(m.frequency);
+    const offsets=m.fn==='tan'?[-.25,0,.25]:[0,.25,.5,.75,1];
+    ctx.save();ctx.font=`9px 'IBM Plex Mono', monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
+    offsets.forEach(fr=>{const x=shift+period*fr;if(x<screenMinX||x>screenMaxX||!isInsideSeriesDomain(series,x))return;const y=evaluateModel(m,x);if(!Number.isFinite(y))return;const p=toScreen(x,y);if(p.sy<-20||p.sy>cssHeight+20)return;ctx.fillStyle=series.color;ctx.beginPath();ctx.arc(p.sx,p.sy,3.2,0,Math.PI*2);ctx.fill();ctx.fillStyle=tc.ink;ctx.fillText(formatAngleValue(x),p.sx,p.sy-6);});
+    ctx.restore();
   }
 
   function draw(){
@@ -1675,10 +2046,14 @@
 
     ctx.fillStyle = tc.inkSoft; ctx.font = `11px 'IBM Plex Mono', monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    for(let x = minX; x <= maxX; x += step){
-      const xVal = parseFloat(x.toPrecision(10));
-      if(Math.abs(xVal) < 1e-9 || Math.abs(xVal % (step * 2)) > 1e-9) continue;
-      ctx.fillText(xVal, originX + xVal * unitSize, Math.max(5, Math.min(originY + 5, cssHeight - 20)));
+    if(trigIsVisible()){
+      drawTrigAngleScale(screenMinX,screenMaxX,tc);
+    }else{
+      for(let x = minX; x <= maxX; x += step){
+        const xVal = parseFloat(x.toPrecision(10));
+        if(Math.abs(xVal) < 1e-9 || Math.abs(xVal % (step * 2)) > 1e-9) continue;
+        ctx.fillText(xVal, originX + xVal * unitSize, Math.max(5, Math.min(originY + 5, cssHeight - 20)));
+      }
     }
     
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
@@ -1697,7 +2072,9 @@
     const plotMaxX = hasDMax ? Math.min(screenMaxX, dMax) : screenMaxX;
 
     if (graphedFunctions.length) {
+      drawSelectedTangentAsymptotes(screenMinX,screenMaxX,tc);
       graphedFunctions.forEach(series => drawFunctionSeries(series, screenMinX, screenMaxX));
+      drawSelectedTrigKeyPoints(screenMinX,screenMaxX,tc);
       if (!examMode) {
         computeIntersections().forEach((hit, idx) => {
           if (hit.x >= screenMinX && hit.x <= screenMaxX) drawPOI(hit.x, hit.y, '#805AD5', `I${idx+1}`);
@@ -1791,7 +2168,7 @@
     if(!model&&funcType==='linear'&&points.length===2){const dx=points[1].x-points[0].x;if(Math.abs(dx)>1e-9)model={type:'linear',m:(points[1].y-points[0].y)/dx,b:points[0].y-((points[1].y-points[0].y)/dx)*points[0].x};}
     if(!model){tbody.innerHTML='<tr><td colspan="2" style="color:var(--ink-soft)">Aguardando função...</td></tr>';return;}
     const active=graphedFunctions.find(f=>f.id===activeFunctionId);const dMin=active&&Number.isFinite(active.domainMin)?active.domainMin:parseFloat(domMinInput.value),dMax=active&&Number.isFinite(active.domainMax)?active.domainMax:parseFloat(domMaxInput.value);const hasMin=Number.isFinite(dMin),hasMax=Number.isFinite(dMax);
-    for(let x=-3;x<=3;x++){if(hasMin&&x<dMin)continue;if(hasMax&&x>dMax)continue;const y=evaluateModel(model,x);tbody.innerHTML+=`<tr><td>${x}</td><td>${formatNumber(y)}</td></tr>`;}
+    for(let x=-3;x<=3;x++){if(hasMin&&x<dMin)continue;if(hasMax&&x>dMax)continue;const y=evaluateModel(model,x);tbody.innerHTML+=`<tr><td>${x}</td><td>${Number.isFinite(y)?formatNumber(y):'indef.'}</td></tr>`;}
     if(!tbody.innerHTML)tbody.innerHTML='<tr><td colspan="2" style="color:var(--ink-soft)">Valores fora do domínio</td></tr>';
   }
 
@@ -1799,15 +2176,33 @@
     updateTable();const variable=currentVariable||'x',dependent=getDependentLabel();let model=mathModel;
     if(!model&&funcType==='linear'&&points.length===2){const dx=points[1].x-points[0].x;if(Math.abs(dx)>1e-9)model={type:'linear',m:(points[1].y-points[0].y)/dx,b:points[0].y-((points[1].y-points[0].y)/dx)*points[0].x};}
     if(!model){equationArea.innerHTML='<div class="empty-state">Defina uma equação ou pontos para gerar a análise.</div>';return;}
+    const active=graphedFunctions.find(f=>f.id===activeFunctionId);
     if(model.type==='linear'){
       const m=model.m,b=model.b;let expr=m===1?variable:m===-1?`-${variable}`:Math.abs(m)<1e-12?'':`${formatNumber(m)}${variable}`;
       if(Math.abs(b)>1e-12||!expr)expr+=`${expr?(b>=0?' + ':' - '):(b<0?'-':'')}${formatNumber(Math.abs(b))}`;
       const root=Math.abs(m)>1e-12?`<div><b>Raiz:</b> ${variable} = ${formatNumber(-b/m)}</div>`:'';
       equationArea.innerHTML=`<div class="equation-box"><div class="eq">${dependent} = ${expr}</div><div class="sub">m = ${formatNumber(m)} &nbsp;·&nbsp; b = ${formatNumber(b)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Valor quando ${variable}=0:</b> ${formatNumber(b)}</div>${root}</div>`;
-    }else{
-      const a=model.a,b=model.b,c=model.c,delta=b*b-4*a*c,xv=-b/(2*a),yv=-delta/(4*a);const active=graphedFunctions.find(f=>f.id===activeFunctionId);const shown=active?formatSeriesEquation(active):`${dependent} = ${formatNumber(a)}${variable}²`;
+    }else if(model.type==='quadratic'){
+      const a=model.a,b=model.b,c=model.c,delta=b*b-4*a*c,xv=-b/(2*a),yv=-delta/(4*a);const shown=active?formatSeriesEquation(active):`${dependent} = ${formatNumber(a)}${variable}²`;
       let roots=delta>1e-10?`<div><b>Raízes:</b> ${formatNumber((-b+Math.sqrt(delta))/(2*a))} e ${formatNumber((-b-Math.sqrt(delta))/(2*a))}</div>`:Math.abs(delta)<=1e-10?`<div><b>Raiz dupla:</b> ${formatNumber(-b/(2*a))}</div>`:'<div><b>Raízes:</b> não possui raízes reais</div>';
       equationArea.innerHTML=`<div class="equation-box"><div class="eq">${shown}</div><div class="sub">a = ${formatNumber(a)}, b = ${formatNumber(b)}, c = ${formatNumber(c)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Vértice:</b> (${formatNumber(xv)}, ${formatNumber(yv)})</div><div><b>Δ:</b> ${formatNumber(delta)}</div>${roots}<div><b>Valor quando ${variable}=0:</b> ${formatNumber(c)}</div></div>`;
+    }else if(model.type==='trigonometric'){
+      const shown=active?formatSeriesEquation(active):`${dependent} = função trigonométrica`;
+      const absB=Math.abs(model.frequency),period=absB<1e-12?Infinity:(model.fn==='tan'?Math.PI/absB:(2*Math.PI)/absB);
+      const shift=absB<1e-12?null:-model.phase/model.frequency;
+      const fnName=model.fn==='sin'?'Seno':model.fn==='cos'?'Cosseno':'Tangente';
+      const verticalLabel=model.fn==='tan'?'fator vertical':'amplitude';
+      let extra=`<div><b>Período:</b> ${Number.isFinite(period)?`${formatPiAngle(period)} = ${formatNumber(period*180/Math.PI)}°`:'constante'}</div>`;
+      if(shift!==null)extra+=`<div><b>Deslocamento horizontal:</b> ${formatPiAngle(shift)} (${formatNumber(shift)})</div>`;
+      extra+=`<div><b>Linha média:</b> y = ${formatNumber(model.offset)}</div><div><b>Fase C:</b> ${formatPiAngle(model.phase)}</div>`;
+      if(model.fn!=='tan'){
+        extra+=`<div><b>Máximo:</b> ${formatNumber(model.offset+Math.abs(model.amplitude))} &nbsp;·&nbsp; <b>Mínimo:</b> ${formatNumber(model.offset-Math.abs(model.amplitude))}</div>`;
+        extra+=`<div><b>Imagem:</b> [${formatNumber(model.offset-Math.abs(model.amplitude))}, ${formatNumber(model.offset+Math.abs(model.amplitude))}]</div>`;
+      }else{
+        extra+=`<div><b>Imagem:</b> ℝ</div>`;
+        if(absB>1e-12)extra+=`<div><b>Assíntotas:</b> ${variable} = (π/2 − C + kπ)/B, k ∈ ℤ</div>`;
+      }
+      equationArea.innerHTML=`<div class="equation-box"><div class="eq">${shown}</div><div class="sub">${fnName} · ${verticalLabel} = ${formatNumber(model.amplitude)} · B = ${formatNumber(model.frequency)}</div></div><div class="steps" style="margin-top:14px;">${extra}<div><b>Valor quando ${variable}=0:</b> ${formatNumber(evaluateModel(model,0))}</div><div><b>Entrada angular:</b> radianos; constantes com ° são convertidas automaticamente</div></div>`;
     }
   }
 
@@ -2125,11 +2520,13 @@
   document.getElementById('exam-mode-toggle').addEventListener('click',()=>setExamMode(!examMode));
   document.getElementById('minimal-layout-toggle').addEventListener('click',()=>setMinimalLayout(!minimalLayout));
   document.getElementById('minimal-more-toggle').addEventListener('click',toggleMinimalMore);
+  document.querySelectorAll('.angle-unit-btn').forEach(btn=>btn.addEventListener('click',()=>setAngleDisplayUnit(btn.dataset.angleUnit)));
+  buildTrigReferenceTable();
   const helpModal=document.getElementById('help-modal');
   const openHelp=()=>helpModal.classList.add('open'),closeHelp=()=>helpModal.classList.remove('open');
   document.getElementById('help-btn').addEventListener('click',openHelp);document.getElementById('help-close-btn').addEventListener('click',closeHelp);helpModal.addEventListener('click',e=>{if(e.target===helpModal)closeHelp();});
 
-  container.addEventListener('pointermove',e=>{const p=getPlanePointerPosition(e),plane=toPlane(p.x,p.y);const el=document.getElementById('coord-indicator');if(el)el.textContent=`${currentVariable||'x'}: ${formatNumber(plane.x)} · y: ${formatNumber(plane.y)}`;});
+  container.addEventListener('pointermove',e=>{const p=getPlanePointerPosition(e),plane=toPlane(p.x,p.y);const el=document.getElementById('coord-indicator');if(el){const xText=trigIsVisible()?`${formatPiAngle(plane.x)} (${formatNumber(plane.x*180/Math.PI)}°)`:formatNumber(plane.x);el.textContent=`${currentVariable||'x'}: ${xText} · y: ${formatNumber(plane.y)}`;}});
   container.addEventListener('pointerleave',()=>{const el=document.getElementById('coord-indicator');if(el)el.textContent=`${currentVariable||'x'}: — · y: —`;});
 
   document.querySelectorAll('#mode-point, #mode-pan, #mode-draw, #mode-erase').forEach(btn => {
@@ -2261,6 +2658,10 @@
   const scratchGraphSizeLabel = document.getElementById('scratch-graph-size-label');
   const scratchGraphPlaceHint = document.getElementById('scratch-graph-place-hint');
   const addScratchGraphBtn = document.getElementById('add-scratch-graph');
+  const addScratchTrigAxisBtn = document.getElementById('add-scratch-trig-axis');
+  const addScratchUnitCircleBtn = document.getElementById('add-scratch-unit-circle');
+  const addScratchAngleTableBtn = document.getElementById('add-scratch-angle-table');
+  const scratchResourceButtons = [addScratchGraphBtn,addScratchTrigAxisBtn,addScratchUnitCircleBtn,addScratchAngleTableBtn].filter(Boolean);
 
   const scratchPrintLayer = document.getElementById('scratch-print-layer');
   const scratchPrintControls = document.getElementById('scratch-print-controls');
@@ -2270,6 +2671,7 @@
   const scratchPdfNameInput = document.getElementById('scratch-pdf-name');
 
   let placingScratchGraph = false;
+  let scratchGraphTypeToPlace = 'xy';
   let scratchGraphCounter = 0;
   const scratchGraphs = [];
 
@@ -2310,7 +2712,7 @@
     return {dataUrl:snap.toDataURL('image/png'),usedHeight:drawingUsedHeight};
   }
 
-  function scratchGraphState(){return scratchGraphs.map(g=>({left:parseFloat(g.wrapper.style.left)||0,top:parseFloat(g.wrapper.style.top)||0,width:parseFloat(g.wrapper.style.width)||340,height:parseFloat(g.wrapper.style.height)||238}));}
+  function scratchGraphState(){return scratchGraphs.map(g=>({type:g.type||'xy',left:parseFloat(g.wrapper.style.left)||0,top:parseFloat(g.wrapper.style.top)||0,width:parseFloat(g.wrapper.style.width)||340,height:parseFloat(g.wrapper.style.height)||238}));}
   function scratchPrintState(){return scratchPrints.map(p=>({src:p.img.src,left:p.left,top:p.top,width:p.width,height:p.height}));}
 
   function saveScratchStateNow(){
@@ -2341,7 +2743,7 @@
     const finish=()=>{restoringScratch=false;scheduleScratchSave();};
     const restoreExtras=()=>{
       const originalSize=scratchGraphSize.value;
-      pendingScratchGraphs.forEach(g=>{scratchGraphSize.value=Math.round(g.width||340);const wrapRect=canvas.parentElement.getBoundingClientRect();createScratchGraphAt(wrapRect.left+(g.left||0)+(g.width||340)/2,wrapRect.top+(g.top||0)+(g.height||238)/2);});
+      pendingScratchGraphs.forEach(g=>{scratchGraphSize.value=Math.round(g.width||340);const wrapRect=canvas.parentElement.getBoundingClientRect();createScratchGraphAt(wrapRect.left+(g.left||0)+(g.width||340)/2,wrapRect.top+(g.top||0)+(g.height||238)/2,g.type||'xy');});
       scratchGraphSize.value=originalSize;getScratchGraphDimensions();
       pendingScratchPrints.forEach(pr=>createScratchPrintFromDataUrl(pr.src,pr));
       pendingScratchGraphs=[];pendingScratchPrints=[];
@@ -2350,110 +2752,90 @@
     else {restoreExtras();setTimeout(finish,0);}
   }
 
-  function setScratchGraphPlacementMode(enabled){
-    placingScratchGraph = enabled;
-
-    addScratchGraphBtn.classList.toggle('active', enabled);
-    addScratchGraphBtn.textContent = enabled ? '📍 Clique no rascunho' : '＋ Inserir';
-    scratchGraphPlaceHint.style.display = enabled ? 'inline' : 'none';
-
-    if (enabled) {
-      canvas.style.cursor = 'crosshair';
-    } else {
-      updateBrushCursor();
-    }
+  function scratchResourceLabel(type){
+    return type==='trig-axis'?'eixos trigonométricos':type==='unit-circle'?'círculo trigonométrico':type==='angle-table'?'tabela de ângulos':'gráfico X/Y';
   }
 
-  function getScratchGraphDimensions(){
+  function setScratchGraphPlacementMode(enabled, type=scratchGraphTypeToPlace){
+    placingScratchGraph = enabled;
+    scratchGraphTypeToPlace = type || 'xy';
+    scratchResourceButtons.forEach(btn=>btn.classList.remove('active'));
+    const activeMap={'xy':addScratchGraphBtn,'trig-axis':addScratchTrigAxisBtn,'unit-circle':addScratchUnitCircleBtn,'angle-table':addScratchAngleTableBtn};
+    if(enabled&&activeMap[scratchGraphTypeToPlace])activeMap[scratchGraphTypeToPlace].classList.add('active');
+    if(addScratchGraphBtn)addScratchGraphBtn.textContent=enabled&&scratchGraphTypeToPlace==='xy'?'📍 Posicionar':'＋ Inserir';
+    scratchGraphPlaceHint.style.display = enabled ? 'inline' : 'none';
+    scratchGraphPlaceHint.textContent = enabled ? `Clique no rascunho para posicionar ${scratchResourceLabel(scratchGraphTypeToPlace)}` : 'Clique no rascunho para posicionar';
+    if (enabled) canvas.style.cursor = 'crosshair'; else updateBrushCursor();
+  }
+
+  function getScratchGraphDimensions(type=scratchGraphTypeToPlace){
     const width = Math.max(220, Math.min(520, parseInt(scratchGraphSize.value, 10) || 340));
-    const height = Math.round(width * 0.70);
+    let height=Math.round(width*.70);
+    if(type==='unit-circle')height=width;
+    else if(type==='angle-table')height=Math.round(width*.72);
     scratchGraphSizeLabel.textContent = width + 'px';
     return { width, height };
   }
 
+  function drawScratchAxesBase(graphCtx,w,h,colors,xLabel='x',yLabel='y'){
+    const cx=w/2,cy=h/2;graphCtx.strokeStyle=colors.axis;graphCtx.fillStyle=colors.axis;graphCtx.lineWidth=1.6;graphCtx.lineCap='round';graphCtx.lineJoin='round';
+    graphCtx.beginPath();graphCtx.moveTo(8,cy);graphCtx.lineTo(w-10,cy);graphCtx.stroke();
+    graphCtx.beginPath();graphCtx.moveTo(w-10,cy);graphCtx.lineTo(w-18,cy-5);graphCtx.moveTo(w-10,cy);graphCtx.lineTo(w-18,cy+5);graphCtx.stroke();
+    graphCtx.beginPath();graphCtx.moveTo(cx,h-8);graphCtx.lineTo(cx,10);graphCtx.stroke();
+    graphCtx.beginPath();graphCtx.moveTo(cx,10);graphCtx.lineTo(cx-5,18);graphCtx.moveTo(cx,10);graphCtx.lineTo(cx+5,18);graphCtx.stroke();
+    graphCtx.font=`600 13px 'IBM Plex Mono', monospace`;graphCtx.textBaseline='middle';graphCtx.textAlign='right';graphCtx.fillText(xLabel,w-12,cy-13);graphCtx.textAlign='left';graphCtx.fillText(yLabel,cx+8,14);graphCtx.fillStyle=colors.inkSoft;graphCtx.font=`11px 'IBM Plex Mono', monospace`;graphCtx.fillText('0',cx+6,cy+10);
+  }
+
+  function drawScratchTrigAxis(graphCtx,w,h,colors){
+    drawScratchAxesBase(graphCtx,w,h,colors,'θ','y');
+    const cx=w/2,cy=h/2,left=18,right=w-18,half=Math.min(cx-20,(right-left)/2);const xFor=a=>cx+(a/(2*Math.PI))*half;
+    const ticks=[[-2*Math.PI,'−2π'],[-3*Math.PI/2,'−3π/2'],[-Math.PI,'−π'],[-Math.PI/2,'−π/2'],[Math.PI/2,'π/2'],[Math.PI,'π'],[3*Math.PI/2,'3π/2'],[2*Math.PI,'2π']];
+    graphCtx.font=`10px 'IBM Plex Mono', monospace`;graphCtx.textAlign='center';graphCtx.textBaseline='top';
+    ticks.forEach(([a,label])=>{const x=xFor(a);graphCtx.strokeStyle=colors.gridStrong;graphCtx.beginPath();graphCtx.moveTo(x,cy-4);graphCtx.lineTo(x,cy+4);graphCtx.stroke();graphCtx.fillStyle=colors.inkSoft;graphCtx.fillText(label,x,cy+7);});
+    graphCtx.textAlign='right';graphCtx.textBaseline='middle';graphCtx.fillText('1',cx-6,cy-h*.28);graphCtx.fillText('−1',cx-6,cy+h*.28);
+    graphCtx.strokeStyle=colors.gridSoft;graphCtx.setLineDash([4,4]);[cy-h*.28,cy+h*.28].forEach(y=>{graphCtx.beginPath();graphCtx.moveTo(12,y);graphCtx.lineTo(w-12,y);graphCtx.stroke();});graphCtx.setLineDash([]);
+  }
+
+  function drawScratchUnitCircle(graphCtx,w,h,colors){
+    const cx=w/2,cy=h/2,r=Math.min(w,h)*.34;graphCtx.strokeStyle=colors.axis;graphCtx.fillStyle=colors.ink;graphCtx.lineWidth=1.5;
+    graphCtx.beginPath();graphCtx.arc(cx,cy,r,0,Math.PI*2);graphCtx.stroke();
+    graphCtx.strokeStyle=colors.gridStrong;graphCtx.beginPath();graphCtx.moveTo(cx-r-18,cy);graphCtx.lineTo(cx+r+18,cy);graphCtx.moveTo(cx,cy-r-18);graphCtx.lineTo(cx,cy+r+18);graphCtx.stroke();
+    const angles=[0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330];
+    const labels={0:'0 / 2π',30:'π/6',45:'π/4',60:'π/3',90:'π/2',120:'2π/3',135:'3π/4',150:'5π/6',180:'π',210:'7π/6',225:'5π/4',240:'4π/3',270:'3π/2',300:'5π/3',315:'7π/4',330:'11π/6'};
+    angles.forEach(deg=>{const a=deg*Math.PI/180,x=cx+r*Math.cos(a),y=cy-r*Math.sin(a);graphCtx.strokeStyle=colors.gridSoft;graphCtx.beginPath();graphCtx.moveTo(cx,cy);graphCtx.lineTo(x,y);graphCtx.stroke();graphCtx.fillStyle=colors.axis;graphCtx.beginPath();graphCtx.arc(x,y,2.4,0,Math.PI*2);graphCtx.fill();if(deg%30===0||deg%90===0){const lx=cx+(r+20)*Math.cos(a),ly=cy-(r+20)*Math.sin(a);graphCtx.fillStyle=colors.inkSoft;graphCtx.font=`9px 'IBM Plex Mono', monospace`;graphCtx.textAlign=Math.cos(a)>.2?'left':Math.cos(a)<-.2?'right':'center';graphCtx.textBaseline=Math.sin(a)>.2?'bottom':Math.sin(a)<-.2?'top':'middle';graphCtx.fillText(labels[deg],lx,ly);}});
+    graphCtx.fillStyle=colors.ink;graphCtx.font=`600 11px 'IBM Plex Mono', monospace`;graphCtx.textAlign='center';graphCtx.textBaseline='top';graphCtx.fillText('Círculo trigonométrico · raio = 1',cx,8);
+    graphCtx.font=`9px 'IBM Plex Mono', monospace`;graphCtx.fillStyle=colors.inkSoft;graphCtx.fillText('x = cos(θ)   ·   y = sen(θ)',cx,h-17);
+  }
+
+  function drawScratchAngleTable(graphCtx,w,h,colors){
+    graphCtx.fillStyle=colors.ink;graphCtx.font=`700 12px 'IBM Plex Mono', monospace`;graphCtx.textAlign='center';graphCtx.textBaseline='middle';graphCtx.fillText('Ângulos notáveis',w/2,18);
+    const rows=[['0°','0','0','1','0'],['30°','π/6','1/2','√3/2','√3/3'],['45°','π/4','√2/2','√2/2','1'],['60°','π/3','√3/2','1/2','√3'],['90°','π/2','1','0','—'],['180°','π','0','−1','0'],['270°','3π/2','−1','0','—'],['360°','2π','0','1','0']];
+    const headers=['°','rad','sen','cos','tan'];const x0=10,y0=36,tableW=w-20,rowH=Math.min(25,(h-y0-10)/(rows.length+1)),colW=tableW/headers.length;
+    graphCtx.font=`700 9px 'IBM Plex Mono', monospace`;headers.forEach((t,i)=>{graphCtx.fillStyle=colors.ink;graphCtx.fillText(t,x0+colW*(i+.5),y0+rowH/2);});
+    graphCtx.font=`9px 'IBM Plex Mono', monospace`;rows.forEach((row,r)=>row.forEach((t,i)=>{graphCtx.fillStyle=colors.inkSoft;graphCtx.fillText(t,x0+colW*(i+.5),y0+rowH*(r+1.5));}));
+    graphCtx.strokeStyle=colors.gridStrong;graphCtx.lineWidth=1;for(let i=0;i<=headers.length;i++){const x=x0+i*colW;graphCtx.beginPath();graphCtx.moveTo(x,y0);graphCtx.lineTo(x,y0+rowH*(rows.length+1));graphCtx.stroke();}for(let r=0;r<=rows.length+1;r++){const y=y0+r*rowH;graphCtx.beginPath();graphCtx.moveTo(x0,y);graphCtx.lineTo(x0+tableW,y);graphCtx.stroke();}
+  }
+
   function drawOneScratchGraph(graph){
-    const wrapper = graph.wrapper;
-    const graphCanvas = graph.canvas;
-    const graphCtx = graph.ctx;
-
-    const rect = wrapper.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-
-    const graphDpr = Math.max(window.devicePixelRatio || 1, 1);
-    graphCanvas.width = Math.round(rect.width * graphDpr);
-    graphCanvas.height = Math.round(rect.height * graphDpr);
-    graphCanvas.style.width = rect.width + 'px';
-    graphCanvas.style.height = rect.height + 'px';
-
-    graphCtx.setTransform(graphDpr, 0, 0, graphDpr, 0, 0);
-
-    const w = rect.width;
-    const h = rect.height;
-    const cx = w / 2;
-    const cy = h / 2;
-    const colors = getThemeColors();
-
-    graphCtx.clearRect(0, 0, w, h);
-    graphCtx.strokeStyle = colors.axis;
-    graphCtx.fillStyle = colors.axis;
-    graphCtx.lineWidth = 1.6;
-    graphCtx.lineCap = 'round';
-    graphCtx.lineJoin = 'round';
-
-    // Eixo X
-    graphCtx.beginPath();
-    graphCtx.moveTo(8, cy);
-    graphCtx.lineTo(w - 10, cy);
-    graphCtx.stroke();
-
-    // Seta X
-    graphCtx.beginPath();
-    graphCtx.moveTo(w - 10, cy);
-    graphCtx.lineTo(w - 18, cy - 5);
-    graphCtx.moveTo(w - 10, cy);
-    graphCtx.lineTo(w - 18, cy + 5);
-    graphCtx.stroke();
-
-    // Eixo Y
-    graphCtx.beginPath();
-    graphCtx.moveTo(cx, h - 8);
-    graphCtx.lineTo(cx, 10);
-    graphCtx.stroke();
-
-    // Seta Y
-    graphCtx.beginPath();
-    graphCtx.moveTo(cx, 10);
-    graphCtx.lineTo(cx - 5, 18);
-    graphCtx.moveTo(cx, 10);
-    graphCtx.lineTo(cx + 5, 18);
-    graphCtx.stroke();
-
-    // Rótulos
-    graphCtx.font = `600 13px 'IBM Plex Mono', monospace`;
-    graphCtx.textBaseline = 'middle';
-
-    graphCtx.textAlign = 'right';
-    graphCtx.fillText('x', w - 12, cy - 13);
-
-    graphCtx.textAlign = 'left';
-    graphCtx.fillText('y', cx + 8, 14);
-
-    graphCtx.fillStyle = colors.inkSoft;
-    graphCtx.font = `11px 'IBM Plex Mono', monospace`;
-    graphCtx.fillText('0', cx + 6, cy + 10);
+    const wrapper=graph.wrapper,graphCanvas=graph.canvas,graphCtx=graph.ctx;const rect=wrapper.getBoundingClientRect();if(rect.width<=0||rect.height<=0)return;
+    const graphDpr=Math.max(window.devicePixelRatio||1,1);graphCanvas.width=Math.round(rect.width*graphDpr);graphCanvas.height=Math.round(rect.height*graphDpr);graphCanvas.style.width=rect.width+'px';graphCanvas.style.height=rect.height+'px';graphCtx.setTransform(graphDpr,0,0,graphDpr,0,0);
+    const w=rect.width,h=rect.height,colors=getThemeColors();graphCtx.clearRect(0,0,w,h);graphCtx.lineCap='round';graphCtx.lineJoin='round';
+    if(graph.type==='trig-axis')drawScratchTrigAxis(graphCtx,w,h,colors);
+    else if(graph.type==='unit-circle')drawScratchUnitCircle(graphCtx,w,h,colors);
+    else if(graph.type==='angle-table')drawScratchAngleTable(graphCtx,w,h,colors);
+    else drawScratchAxesBase(graphCtx,w,h,colors,'x','y');
   }
 
-  function redrawAllScratchGraphs(){
-    scratchGraphs.forEach(drawOneScratchGraph);
-  }
+  function redrawAllScratchGraphs(){scratchGraphs.forEach(drawOneScratchGraph);}
 
-  function createScratchGraphAt(clientX, clientY){
+  function createScratchGraphAt(clientX, clientY, type=scratchGraphTypeToPlace){
     const wrap = canvas.parentElement;
     const wrapRect = wrap.getBoundingClientRect();
-    const { width, height } = getScratchGraphDimensions();
+    const { width, height } = getScratchGraphDimensions(type);
 
     const wrapper = document.createElement('div');
     wrapper.className = 'scratch-graph';
+    wrapper.dataset.resourceType = type;
     wrapper.dataset.graphId = String(++scratchGraphCounter);
     wrapper.style.width = width + 'px';
     wrapper.style.height = height + 'px';
@@ -2480,6 +2862,7 @@
 
     const graph = {
       id: scratchGraphCounter,
+      type,
       wrapper,
       canvas: graphCanvas,
       ctx: graphCanvas.getContext('2d')
@@ -2490,12 +2873,15 @@
     if (!restoringScratch) scheduleScratchSave();
   }
 
-  function beginScratchGraphPlacement(){
-    setScratchGraphPlacementMode(true);
-    getScratchGraphDimensions();
+  function beginScratchGraphPlacement(type='xy'){
+    setScratchGraphPlacementMode(true,type);
+    getScratchGraphDimensions(type);
   }
 
-  addScratchGraphBtn.addEventListener('click', beginScratchGraphPlacement);
+  addScratchGraphBtn.addEventListener('click', ()=>beginScratchGraphPlacement('xy'));
+  addScratchTrigAxisBtn.addEventListener('click', ()=>beginScratchGraphPlacement('trig-axis'));
+  addScratchUnitCircleBtn.addEventListener('click', ()=>beginScratchGraphPlacement('unit-circle'));
+  addScratchAngleTableBtn.addEventListener('click', ()=>beginScratchGraphPlacement('angle-table'));
 
   document.getElementById('remove-scratch-graph').addEventListener('click', () => {
     // Remove somente o último gráfico inserido.
@@ -2506,7 +2892,7 @@
   });
 
   scratchGraphSize.addEventListener('input', () => {
-    getScratchGraphDimensions();
+    getScratchGraphDimensions(scratchGraphTypeToPlace);
     scheduleScratchSave();
   });
 
