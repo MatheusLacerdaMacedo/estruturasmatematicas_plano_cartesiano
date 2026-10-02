@@ -182,6 +182,8 @@
     flex: 1; background: transparent; color: var(--ink-soft);
     border: none; box-shadow: none; padding: 6px 4px; font-size: 0.75rem;
   }
+  .function-type-tools{ flex-wrap:wrap; }
+  .function-type-tools .func-toggle{ min-width:calc(50% - 3px); }
   .interaction-tools button.active {
     background: var(--paper); color: var(--ink);
     border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -602,6 +604,8 @@
   .trig-formula-note{ font-size:.69rem; line-height:1.55; color:var(--ink-soft); }
   .trig-formula-note b{ color:var(--ink); }
   .scratch-trig-legend{ font-size:.69rem; color:var(--ink-soft); }
+  #exponential-study-summary{ margin-top:2px; }
+  #exponential-study-summary b{ color:var(--ink); }
 
 
   /* ---------- RASCUNHO: BARRA COMPACTA ---------- */
@@ -827,7 +831,7 @@
   <div class="brand-copy">
     <p class="eyebrow">Ferramenta de Estudo Avançada</p>
     <h1>Plano Cartesiano — Funções</h1>
-    <p>Estude funções do 1º, 2º grau e trigonométricas. Marque pontos, compare curvas, ângulos e analise valores instantaneamente.</p>
+    <p>Estude funções do 1º, 2º grau, exponenciais e trigonométricas. Marque pontos, compare curvas, ângulos e analise valores instantaneamente.</p>
   </div>
   <div class="header-actions">
     <button id="minimal-layout-toggle" class="secondary" title="Alternar layout minimalista (L)">▣ Minimalista</button>
@@ -854,7 +858,7 @@
     <div class="exam-plane-badge">MODO PROVA</div>
 
     <div class="project-meta" aria-label="Versão e créditos do projeto">
-      <span class="project-version">v1.3.3</span>
+      <span class="project-version">v1.5.0</span>
       <span class="project-author"><span class="project-author-prefix">Desenvolvido por </span>Matheus</span>
       <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" title="LinkedIn do autor">LinkedIn</a>
       <a href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub do autor">GitHub</a>
@@ -870,9 +874,10 @@
     
     <div class="block" id="function-type-section">
       <h2>Tipo de Função</h2>
-      <div class="interaction-tools" style="margin-bottom: 0;">
+      <div class="interaction-tools function-type-tools" style="margin-bottom: 0;">
         <button class="func-toggle active" data-val="linear">1º Grau (Reta)</button>
         <button class="func-toggle" data-val="quadratic">2º Grau (Parábola)</button>
+        <button class="func-toggle" data-val="exponential">Exponencial</button>
         <button class="func-toggle" data-val="trigonometric">Trigonométrica</button>
       </div>
     </div>
@@ -895,6 +900,21 @@
           </table>
         </div>
         <div class="trig-formula-note">O eixo horizontal mostra ângulos notáveis automaticamente. Também é aceito <b>30°</b>, <b>45°</b>, <b>90°</b> etc. dentro do argumento.</div>
+      </div>
+    </div>
+
+    <div class="block minimal-advanced" id="exponential-study-section" style="display:none;">
+      <h2>Referência Exponencial</h2>
+      <div class="trig-study-panel">
+        <div class="trig-formula-note">
+          Forma geral: <b>y = A·B^(Cx + D) + E</b><br>
+          Condições da base: <b>B &gt; 0</b> e <b>B ≠ 1</b> · assíntota horizontal: <b>y = E</b>.
+        </div>
+        <div class="trig-formula-note">
+          <b>Crescimento/decrescimento:</b> depende do sinal de A·C·ln(B).<br>
+          <b>Domínio:</b> ℝ (salvo uma restrição manual) · <b>Imagem:</b> fica acima de E quando A &gt; 0 e abaixo de E quando A &lt; 0.
+        </div>
+        <div id="exponential-study-summary" class="trig-formula-note">Digite uma função exponencial para ver seus parâmetros e propriedades aqui.</div>
       </div>
     </div>
 
@@ -1197,9 +1217,11 @@
       <div><span class="help-key">P</span> — Estudo / Prova</div><div><span class="help-key">L</span> — Layout minimalista</div>
       <div><span class="help-key">?</span> — Abrir ajuda</div><div><span class="help-key">Ctrl+E</span> — Exportar plano</div>
       <div><span class="help-key">Ctrl+Z</span> — Desfazer desenho</div><div><span class="help-key">Mais opções</span> — Exibe controles avançados no layout minimalista</div>
+      <div><span class="help-key">Exponencial</span> — use a forma A·B^(Cx + D) + E</div><div><span class="help-key">Base exponencial</span> — B &gt; 0 e B ≠ 1; também aceita <b>e</b></div>
       <div><span class="help-key">Trigonometria</span> — sen/sin, cos, tan/tg; use π ou pi</div><div><span class="help-key">Graus</span> — constantes como 30°, 45°, 60° e 90° são aceitas no argumento</div>
     </div>
     <p class="hint"><b>Múltiplas funções:</b> escreva uma função e clique em “Adicionar função”. Use os botões 👁, selecionar e ✕ para gerenciar cada gráfico.</p>
+    <p class="hint"><b>Exponenciais:</b> aceita <b>f(x)=2^x</b>, <b>g(x)=3·2^(x-1)+4</b>, <b>h(t)=(1/2)^t</b> e <b>p(x)=e^x</b>. A análise mostra base, comportamento, assíntota horizontal, domínio, imagem e valor em x=0.</p>
     <p class="hint"><b>Trigonometria:</b> aceita sen/sin, cos e tan/tg em radianos. Exemplos: <b>f(x)=sen(x)</b>, <b>g(t)=2cos(3t)-1</b>, <b>h(x)=tan(x/2)</b> e <b>p(x)=sen(x+pi/2)</b>.</p>
     <p class="hint"><b>Modo prova:</b> oculta tabela, análise e interseções automáticas sem apagar os gráficos.</p>
     <div class="btn-row"><button id="help-close-btn">Fechar</button></div>
@@ -1258,7 +1280,7 @@
 
   const points = []; 
   let currentMode = 'point'; 
-  let funcType = 'linear'; // 'linear', 'quadratic' ou 'trigonometric'
+  let funcType = 'linear'; // 'linear', 'quadratic', 'exponential' ou 'trigonometric'
   let mathModel = null;
   let currentVariable = 'x';
   let currentFunctionName = null;
@@ -1318,6 +1340,11 @@
     if (!model) return NaN;
     if (model.type === 'linear') return model.m * x + model.b;
     if (model.type === 'quadratic') return model.a * x * x + model.b * x + model.c;
+    if (model.type === 'exponential') {
+      const exponent = model.frequency * x + model.phase;
+      const value = model.amplitude * Math.pow(model.base, exponent) + model.offset;
+      return Number.isFinite(value) ? value : NaN;
+    }
     if (model.type === 'trigonometric') {
       const argument = model.frequency * x + model.phase;
       let base;
@@ -1401,6 +1428,16 @@
     buildTrigReferenceTable();
   }
 
+  function updateExponentialStudyVisibility(){
+    const section=document.getElementById('exponential-study-section');
+    if(section)section.style.display=funcType==='exponential'?'block':'none';
+  }
+
+  function updateFunctionStudyVisibility(){
+    updateTrigStudyVisibility();
+    updateExponentialStudyVisibility();
+  }
+
   function formatTrigArgument(model, variable){
     const frequency = Number(model.frequency);
     const phase = Number(model.phase);
@@ -1427,6 +1464,24 @@
       let expr = m.a === 1 ? `${v}²` : m.a === -1 ? `-${v}²` : `${formatNumber(m.a)}${v}²`;
       if (Math.abs(m.b) > 1e-12) expr += m.b > 0 ? ` + ${m.b === 1 ? v : `${formatNumber(m.b)}${v}`}` : ` - ${m.b === -1 ? v : `${formatNumber(Math.abs(m.b))}${v}`}`;
       if (Math.abs(m.c) > 1e-12) expr += m.c > 0 ? ` + ${formatNumber(m.c)}` : ` - ${formatNumber(Math.abs(m.c))}`;
+      return `${dep} = ${expr}`;
+    }
+    if (m.type === 'exponential') {
+      const baseLabel = Math.abs(m.base - Math.E) < 1e-10 ? 'e' : formatNumber(m.base);
+      let exponent = '';
+      if (Math.abs(m.frequency - 1) < 1e-12) exponent = v;
+      else if (Math.abs(m.frequency + 1) < 1e-12) exponent = `-${v}`;
+      else if (Math.abs(m.frequency) < 1e-12) exponent = formatNumber(m.phase);
+      else exponent = `${formatNumber(m.frequency)}${v}`;
+      if (Math.abs(m.frequency) > 1e-12 && Math.abs(m.phase) > 1e-12) {
+        exponent += m.phase > 0 ? ` + ${formatNumber(m.phase)}` : ` - ${formatNumber(Math.abs(m.phase))}`;
+      }
+      let prefix = '';
+      if (Math.abs(m.amplitude - 1) < 1e-12) prefix = '';
+      else if (Math.abs(m.amplitude + 1) < 1e-12) prefix = '-';
+      else prefix = formatNumber(m.amplitude) + '·';
+      let expr = `${prefix}${baseLabel}^(${exponent})`;
+      if (Math.abs(m.offset) > 1e-12) expr += m.offset > 0 ? ` + ${formatNumber(m.offset)}` : ` - ${formatNumber(Math.abs(m.offset))}`;
       return `${dep} = ${expr}`;
     }
     if (m.type === 'trigonometric') {
@@ -1456,14 +1511,15 @@
   }
 
   function syncFunctionTypeButtons(type){
-    funcType = ['linear','quadratic','trigonometric'].includes(type) ? type : 'linear';
+    funcType = ['linear','quadratic','exponential','trigonometric'].includes(type) ? type : 'linear';
     document.querySelectorAll('.func-toggle').forEach(b => b.classList.toggle('active', b.dataset.val === funcType));
     const isTrig = funcType === 'trigonometric';
-    updateTrigStudyVisibility();
+    const isExponential = funcType === 'exponential';
+    updateFunctionStudyVisibility();
     document.getElementById('point-row-3').style.display = funcType === 'quadratic' ? 'flex' : 'none';
-    document.getElementById('points-section').style.display = isTrig ? 'none' : 'block';
-    document.getElementById('mode-point').style.display = isTrig ? 'none' : 'block';
-    if (isTrig && currentMode === 'point') document.getElementById('mode-pan').click();
+    document.getElementById('points-section').style.display = (isTrig || isExponential) ? 'none' : 'block';
+    document.getElementById('mode-point').style.display = (isTrig || isExponential) ? 'none' : 'block';
+    if ((isTrig || isExponential) && currentMode === 'point') document.getElementById('mode-pan').click();
   }
 
   function makeReferencePoints(model){
@@ -1472,6 +1528,15 @@
       if (Math.abs(model.m) > 1e-9) p.push(Math.abs(model.b) < 1e-9 ? {x:1,y:model.m} : {x:-model.b/model.m,y:0});
       else p.push({x:1,y:model.b});
       return p;
+    }
+    if (model.type === 'exponential') {
+      const freq = Math.abs(model.frequency) > 1e-12 ? model.frequency : 1;
+      const center = Math.abs(model.frequency) > 1e-12 ? -model.phase / model.frequency : 0;
+      const x2 = center + 1 / Math.max(1, Math.abs(freq));
+      return [
+        {x:center, y:evaluateModel(model,center)},
+        {x:x2, y:evaluateModel(model,x2)}
+      ];
     }
     if (model.type === 'trigonometric') {
       const b = Math.abs(model.frequency) > 1e-12 ? model.frequency : 1;
@@ -1537,7 +1602,7 @@
     syncFunctionTypeButtons(series.model.type);
     document.getElementById('eq-input').value=series.input||formatSeriesEquation(series);
     domMinInput.value=Number.isFinite(series.domainMin)?series.domainMin:''; domMaxInput.value=Number.isFinite(series.domainMax)?series.domainMax:'';
-    if (series.model.type === 'trigonometric') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));
+    if (series.model.type === 'trigonometric' || series.model.type === 'exponential') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));
     updateInputsFromPoints(); updateFunctionIdentityUI(); renderFunctionList();
     if(doRefresh) refresh();
   }
@@ -1622,6 +1687,16 @@
     }else if(series.model.type==='quadratic'){
       const steps=Math.max(180,Math.min(700,Math.round(cssWidth/2))); const dx=(maxX-minX)/steps || 1;
       for(let i=0;i<=steps;i++){const x=i===steps?maxX:minX+i*dx,y=evaluateModel(series.model,x),p=toScreen(x,y); if(i===0)ctx.moveTo(p.sx,p.sy);else ctx.lineTo(p.sx,p.sy);}
+    }else if(series.model.type==='exponential'){
+      const steps=Math.max(180,Math.min(900,Math.round(cssWidth)));
+      const dx=(maxX-minX)/steps || 1;
+      let drawingSegment=false;
+      for(let i=0;i<=steps;i++){
+        const x=i===steps?maxX:minX+i*dx,y=evaluateModel(series.model,x);
+        if(!Number.isFinite(y)||Math.abs(y)>1e6){drawingSegment=false;continue;}
+        const p=toScreen(x,y);
+        if(!drawingSegment){ctx.moveTo(p.sx,p.sy);drawingSegment=true;}else ctx.lineTo(p.sx,p.sy);
+      }
     }else if(series.model.type==='trigonometric'){
       const steps=Math.max(700,Math.min(5000,Math.round(cssWidth*2.5))); const dx=(maxX-minX)/steps || 1;
       let drawingSegment=false,lastSy=null;
@@ -1723,9 +1798,10 @@
         e.target.classList.add('active');
         funcType = e.target.dataset.val;
 
-        document.getElementById('points-section').style.display = funcType === 'trigonometric' ? 'none' : 'block';
-        document.getElementById('mode-point').style.display = funcType === 'trigonometric' ? 'none' : 'block';
-        updateTrigStudyVisibility();
+        const noPointMode = funcType === 'trigonometric' || funcType === 'exponential';
+        document.getElementById('points-section').style.display = noPointMode ? 'none' : 'block';
+        document.getElementById('mode-point').style.display = noPointMode ? 'none' : 'block';
+        updateFunctionStudyVisibility();
 
         if (funcType === 'linear') {
             document.getElementById('point-row-3').style.display = 'none';
@@ -1737,12 +1813,18 @@
             document.getElementById('points-hint').innerText = 'Marque três pontos com valores diferentes no eixo horizontal para formar a parábola.';
             document.getElementById('eq-input').placeholder = 'ex: P(u) = u² - 4u + 4';
             document.getElementById('hint-format').innerText = 'f(x) = ax² + bx + c';
+        } else if (funcType === 'exponential') {
+            document.getElementById('point-row-3').style.display = 'none';
+            document.getElementById('eq-input').placeholder = 'ex: f(x) = 2·3^x + 1';
+            document.getElementById('hint-format').innerText = 'f(x) = A·B^(Cx + D) + E';
+            if (currentMode === 'point') document.getElementById('mode-pan').click();
         } else {
             document.getElementById('point-row-3').style.display = 'none';
             document.getElementById('eq-input').placeholder = 'ex: f(x) = 2sen(3x + pi/2) - 1';
             document.getElementById('hint-format').innerText = 'f(x) = A·sen(Bx + C) + D';
             if (currentMode === 'point') document.getElementById('mode-pan').click();
         }
+
         resetFunctionIdentity();
         activeFunctionId = null;
         mathModel = null; points.length = 0;
@@ -2009,7 +2091,147 @@
 
   // PARSER DE FUNÇÕES COM VARIÁVEL AUTOMÁTICA
   // Polinomiais: f(x)=2x-3, P(u)=u²-4u+4
+  // Exponenciais: f(x)=2^x, f(x)=3*2^x+1, f(t)=5*3^(2t-1)-2
   // Trigonométricas: f(x)=sen(x), g(t)=2cos(3t)-1, h(x)=tan(x/2), p(x)=sen(x+30°)
+  function stripOuterParentheses(value){
+    let expr=String(value||'').trim();
+    while(expr.startsWith('(') && expr.endsWith(')')){
+      let depth=0,balanced=true;
+      for(let i=0;i<expr.length;i++){
+        if(expr[i]==='(')depth++;
+        else if(expr[i]===')')depth--;
+        if(depth===0 && i<expr.length-1){balanced=false;break;}
+        if(depth<0){balanced=false;break;}
+      }
+      if(!balanced)break;
+      expr=expr.slice(1,-1);
+    }
+    return expr;
+  }
+
+  function parseExponentialArgument(raw, variable){
+    let expr=stripOuterParentheses(String(raw||'').toLowerCase().replace(/π/g,'pi').replace(/−/g,'-').replace(/\s+/g,''));
+    if(!expr)return null;
+
+    const escaped=variable.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const terms=expr.replace(/-/g,'+-').replace(/^\+/,'').split('+').filter(Boolean);
+    let frequency=0,phase=0,variableTerms=0;
+
+    for(let term of terms){
+      if(new RegExp(escaped,'g').test(term)){
+        if((term.match(new RegExp(escaped,'g'))||[]).length!==1)return null;
+        variableTerms++;
+        let coeff=term.replace(new RegExp(escaped,'g'),'');
+        if(coeff.startsWith('/'))coeff='1'+coeff;
+        if(coeff===''||coeff==='+')frequency+=1;
+        else if(coeff==='-')frequency-=1;
+        else{
+          coeff=coeff.replace(/\*$/,'');
+          const c=parseSafeConstant(coeff);
+          if(!Number.isFinite(c))return null;
+          frequency+=c;
+        }
+      }else{
+        const c=parseSafeConstant(term);
+        if(!Number.isFinite(c))return null;
+        phase+=c;
+      }
+    }
+
+    if(variableTerms!==1)return null;
+    return {frequency,phase};
+  }
+
+  function parseExponentialExpression(expression, declaredVariable, variableDisplay, functionName){
+    let normalized=String(expression||'').replace(/,/g,'.').replace(/−/g,'-').replace(/·/g,'*').replace(/×/g,'*').replace(/\s+/g,'');
+    if(!normalized||!normalized.includes('^'))return null;
+
+    const firstCaret=normalized.indexOf('^');
+    if(firstCaret<=0)return null;
+
+    const left=normalized.slice(0,firstCaret);
+    let right=normalized.slice(firstCaret+1);
+    let exponentText='',suffix='';
+
+    // Para expoente composto, use parênteses: 2^(x-1)+3.
+    if(right.startsWith('(')){
+      let depth=0,close=-1;
+      for(let i=0;i<right.length;i++){
+        if(right[i]==='(')depth++;
+        else if(right[i]===')'){
+          depth--;
+          if(depth===0){close=i;break;}
+          if(depth<0)return null;
+        }
+      }
+      if(close<0)return null;
+      exponentText=right.slice(1,close);
+      suffix=right.slice(close+1);
+    }else{
+      // Sem parênteses, aceitamos apenas expoentes lineares de uma variável:
+      // x, -x, 2x, x/2. Qualquer + ou - posterior vira deslocamento vertical.
+      const match=right.match(/^([+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:\/(?:\d+(?:\.\d*)?|\.\d+))?(?:\*)?)?[A-Za-z])([+-].*)?$/);
+      if(!match)return null;
+      exponentText=match[1];
+      suffix=match[2]||'';
+    }
+
+    // Se houver operadores de potência adicionais, a expressão não é desta forma.
+    if(left.includes('^')||exponentText.includes('^')||suffix.includes('^'))return null;
+
+    let coefficient=1,baseText=left;
+    if(left.includes('*')){
+      const star=left.lastIndexOf('*');
+      const coeffText=left.slice(0,star);
+      baseText=left.slice(star+1);
+      coefficient=parseSafeConstant(coeffText);
+      if(!Number.isFinite(coefficient))return null;
+    }else if(left.startsWith('-') && left.length>1){
+      coefficient=-1;
+      baseText=left.slice(1);
+    }else if(left.startsWith('+') && left.length>1){
+      coefficient=1;
+      baseText=left.slice(1);
+    }
+
+    baseText=stripOuterParentheses(baseText);
+    let base;
+    if(baseText.toLowerCase()==='e')base=Math.E;
+    else if(baseText.toLowerCase()==='pi')base=Math.PI;
+    else base=parseSafeConstant(baseText);
+
+    if(!Number.isFinite(coefficient)||!Number.isFinite(base)||base<=0||Math.abs(base-1)<1e-12)return null;
+
+    // Variável é detectada somente no expoente; 'e' e 'pi' continuam sendo constantes.
+    let variable=declaredVariable;
+    const letters=exponentText.replace(/pi/g,'').match(/[a-z]/g)||[];
+    if(!variable){
+      const unique=[...new Set(letters)];
+      if(unique.length!==1)return null;
+      variable=unique[0];
+      variableDisplay=variable;
+    }else if(letters.some(letter=>letter!==variable)){
+      return null;
+    }
+
+    const arg=parseExponentialArgument(exponentText,variable);
+    if(!arg||Math.abs(arg.frequency)<1e-12)return null;
+
+    const offset=suffix?parseSafeConstant(suffix):0;
+    if(!Number.isFinite(offset))return null;
+
+    return {
+      type:'exponential',
+      amplitude:coefficient,
+      base,
+      frequency:arg.frequency,
+      phase:arg.phase,
+      offset,
+      variable:variableDisplay||variable,
+      functionName
+    };
+  }
+
   function parseEquation(input, type) {
     let compact = String(input || '')
       .replace(/,/g, '.')
@@ -2043,11 +2265,16 @@
       }
     }
 
-    // Detecta trigonometria automaticamente, mesmo que o botão ainda esteja em outro tipo.
+    // Detecta exponencial e trigonometria automaticamente, mesmo que o botão
+    // ainda esteja em outro tipo.
+    if(expression.includes('^')){
+      const exponential=parseExponentialExpression(expression,declaredVariable,variableDisplay,functionName);
+      if(exponential)return exponential;
+    }
     if (/(?:sen|sin|cos|tan|tg)\s*\(/i.test(expression)) {
       return parseTrigExpression(expression,declaredVariable,variableDisplay,functionName);
     }
-    if(type==='trigonometric') return null;
+    if(type==='trigonometric' || type==='exponential') return null;
 
     let normalized = expression.toLowerCase();
     const letters = normalized.match(/[a-z]/g) || [];
@@ -2132,7 +2359,7 @@
     const series={id:++functionIdCounter,input:val.trim(),model:{...parsed},variable:currentVariable,functionName:currentFunctionName,color:FUNCTION_COLORS[(functionIdCounter-1)%FUNCTION_COLORS.length],visible:true,domainMin:domMinInput.value===''?null:Number(domMinInput.value),domainMax:domMaxInput.value===''?null:Number(domMaxInput.value)};
     delete series.model.variable;delete series.model.functionName;
     graphedFunctions.push(series);activeFunctionId=series.id;
-    if (series.model.type === 'trigonometric') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));updateInputsFromPoints();
+    if (series.model.type === 'trigonometric' || series.model.type === 'exponential') points.length = 0; else points.splice(0,points.length,...makeReferencePoints(series.model).slice(0,series.model.type==='quadratic'?3:2));updateInputsFromPoints();
     addHistoryEntry(val.trim(),series.model.type);renderFunctionList();focusOnPoints(makeReferencePoints(series.model));refresh();
   });
 
@@ -2367,6 +2594,21 @@
       const a=model.a,b=model.b,c=model.c,delta=b*b-4*a*c,xv=-b/(2*a),yv=-delta/(4*a);const shown=active?formatSeriesEquation(active):`${dependent} = ${formatNumber(a)}${variable}²`;
       let roots=delta>1e-10?`<div><b>Raízes:</b> ${formatNumber((-b+Math.sqrt(delta))/(2*a))} e ${formatNumber((-b-Math.sqrt(delta))/(2*a))}</div>`:Math.abs(delta)<=1e-10?`<div><b>Raiz dupla:</b> ${formatNumber(-b/(2*a))}</div>`:'<div><b>Raízes:</b> não possui raízes reais</div>';
       equationArea.innerHTML=`<div class="equation-box"><div class="eq">${shown}</div><div class="sub">a = ${formatNumber(a)}, b = ${formatNumber(b)}, c = ${formatNumber(c)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Vértice:</b> (${formatNumber(xv)}, ${formatNumber(yv)})</div><div><b>Δ:</b> ${formatNumber(delta)}</div>${roots}<div><b>Valor quando ${variable}=0:</b> ${formatNumber(c)}</div></div>`;
+    }else if(model.type==='exponential'){
+      const shown=active?formatSeriesEquation(active):`${dependent} = ${formatNumber(model.base)}^${variable}`;
+      const slope=model.amplitude*model.frequency*Math.log(model.base);
+      const behavior=slope>1e-12?'crescente':slope<-1e-12?'decrescente':'constante';
+      const x0=evaluateModel(model,0);
+      const baseLabel=Math.abs(model.base-Math.E)<1e-10?'e':formatNumber(model.base);
+      const imageLabel=model.amplitude>0?`(${formatNumber(model.offset)}, +∞)`:model.amplitude<0?`(-∞, ${formatNumber(model.offset)})`:'constante';
+      const restricted=!!(active&&(Number.isFinite(active.domainMin)||Number.isFinite(active.domainMax)));
+      const restriction=restricted?'com a restrição de domínio informada':'ℝ';
+      const asymptote=`y = ${formatNumber(model.offset)}`;
+      const summary=document.getElementById('exponential-study-summary');
+      if(summary){
+        summary.innerHTML=`<b>Base:</b> ${baseLabel} · <b>A:</b> ${formatNumber(model.amplitude)} · <b>C:</b> ${formatNumber(model.frequency)} · <b>D:</b> ${formatNumber(model.phase)} · <b>E:</b> ${formatNumber(model.offset)}`;
+      }
+      equationArea.innerHTML=`<div class="equation-box"><div class="eq">${shown}</div><div class="sub">A = ${formatNumber(model.amplitude)} · B = ${baseLabel} · C = ${formatNumber(model.frequency)} · D = ${formatNumber(model.phase)} · E = ${formatNumber(model.offset)}</div></div><div class="steps" style="margin-top:14px;"><div><b>Comportamento:</b> função ${behavior}</div><div><b>Assíntota horizontal:</b> ${asymptote}</div><div><b>Domínio:</b> ${restriction}</div><div><b>Imagem:</b> ${imageLabel}</div><div><b>Valor quando ${variable}=0:</b> ${formatNumber(x0)}</div><div><b>Condição:</b> B &gt; 0 e B ≠ 1</div></div>`;
     }else if(model.type==='trigonometric'){
       const shown=active?formatSeriesEquation(active):`${dependent} = função trigonométrica`;
       const absB=Math.abs(model.frequency),period=absB<1e-12?Infinity:(model.fn==='tan'?Math.PI/absB:(2*Math.PI)/absB);
