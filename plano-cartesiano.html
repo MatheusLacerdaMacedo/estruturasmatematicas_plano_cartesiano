@@ -856,7 +856,6 @@
     <div class="project-meta" aria-label="Versão e créditos do projeto">
       <span class="project-version">v1.3.3</span>
       <span class="project-author"><span class="project-author-prefix">Desenvolvido por </span>Matheus</span>
-      <!-- Substitua pelos URLs dos seus perfis pessoais quando desejar. -->
       <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" title="LinkedIn do autor">LinkedIn</a>
       <a href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub do autor">GitHub</a>
     </div>
@@ -942,7 +941,6 @@
       <div id="eq-error" class="error-msg">Equação inválida. Verifique o formato e use apenas uma variável.</div>
       <p class="hint minimal-advanced-block" style="margin-top: 8px;">Digite só a expressão ou a função completa, como <b id="hint-format">f(x) = mx + b</b>. Aceita variáveis como x, t, u, z, frações e funções sen/cos/tan.</p>
       
-      <!-- Domínio -->
       <div class="domain-row minimal-advanced-flex">
         <div class="coord-inputs">
             <label id="domain-min-label">Domínio: x Mín</label>
@@ -1023,7 +1021,6 @@
   </div>
 </main>
 
-<!-- RASCUNHO LIVRE -->
 <aside id="draw-drawer" class="draw-drawer" aria-hidden="true">
   <div class="draw-sticky-top">
   <div class="draw-header">
@@ -4455,7 +4452,6 @@
   updateScratchZoomUi();
 })();
 </script>
-<!-- ===== MÓDULO: MATRIZES E SISTEMAS LINEARES (cole logo antes de </body>) ===== -->
 <style>
 .mx-drawer{position:fixed;inset:0;z-index:120;background:var(--paper);color:var(--ink);transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
 .mx-drawer.open{transform:none}
@@ -4765,6 +4761,206 @@ const hdr=document.querySelector('.header-actions'),draw=$('open-draw-btn');hdr.
 })();
 </script>
 <style>
+.calc-drawer{position:fixed;inset:0;z-index:120;background:var(--paper);color:var(--ink);transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;outline:none}
+.calc-drawer.open{transform:none}
+.calc-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 28px;border-bottom:1px solid var(--paper-line);flex-wrap:wrap}
+.calc-top h2{margin:0;font-family:'Space Grotesk',sans-serif;font-size:1.1rem;text-transform:uppercase;color:var(--ink-soft)}
+.calc-tabs{display:flex;gap:6px}
+.calc-tabs button.active{background:var(--ink);color:var(--paper)}
+.calc-body{flex:1;overflow:auto;padding:22px 16px 60px}
+.calc-main{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.calc-box{width:min(100%,360px);border:1px solid var(--paper-line);background:var(--blueprint-deep);border-radius:12px;padding:14px;transition:width .2s}
+.calc-box.sci{width:min(100%,600px)}
+.calc-display{background:var(--paper);border:1px solid var(--paper-line);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:right;min-height:96px;display:flex;flex-direction:column;justify-content:flex-end}
+.calc-expr{font-size:1rem;color:var(--ink-soft);word-break:break-all;min-height:1.5em}
+.calc-res{font-size:2rem;font-weight:600;word-break:break-all;font-family:'Space Grotesk',sans-serif}
+.calc-res.prev{color:var(--ink-soft)}
+.calc-res.err{color:var(--danger);font-size:1.1rem}
+.calc-keys{display:flex;gap:10px}
+.calc-sci{display:none;grid-template-columns:repeat(4,1fr);gap:8px;flex:1.1}
+.calc-box.sci .calc-sci{display:grid}
+.calc-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1}
+.calc-k{padding:14px 0;font-size:1rem;border:1px solid var(--paper-line);background:var(--paper);color:var(--ink);border-radius:8px;font-family:'IBM Plex Mono',monospace}
+.calc-k.op{background:var(--blueprint-deep);color:var(--pencil-dark);font-weight:700}
+.calc-k.eq{background:var(--pencil-dark);border-color:var(--pencil-dark);color:#fff}
+.calc-k.fn{font-size:.82rem;padding:12px 0;background:var(--blueprint-deep)}
+.calc-k.on{background:var(--ink);color:var(--paper)}
+.calc-hist{width:min(100%,280px);border:1px solid var(--paper-line);border-radius:12px;padding:14px;background:var(--blueprint-deep)}
+.calc-hist h3{margin:0 0 8px;font-family:'Space Grotesk',sans-serif;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+.calc-hist-item{display:block;width:100%;text-align:right;background:transparent;color:var(--ink);border:0;border-bottom:1px solid var(--paper-line);border-radius:0;padding:7px 2px;font-size:.78rem;font-family:'IBM Plex Mono',monospace;font-weight:400}
+.calc-hist-item small{display:block;color:var(--ink-soft)}
+.calc-note{font-size:.7rem;color:var(--ink-soft);margin:10px 0 0;line-height:1.5}
+@media(max-width:640px){.calc-keys{flex-direction:column}.calc-top{padding:12px 16px}}
+</style>
+
+<aside id="calc-drawer" class="calc-drawer" aria-hidden="true" tabindex="-1">
+  <div class="calc-top">
+    <h2>Calculadora</h2>
+    <div class="calc-tabs">
+      <button id="calc-tab-simple" class="secondary active">Simples</button>
+      <button id="calc-tab-sci" class="secondary">Científica</button>
+    </div>
+    <button id="calc-close" class="secondary">Fechar ✕</button>
+  </div>
+  <div class="calc-body"><div class="calc-main">
+    <div id="calc-box" class="calc-box">
+      <div class="calc-display"><div id="calc-expr" class="calc-expr"></div><div id="calc-res" class="calc-res">0</div></div>
+      <div class="calc-keys"><div id="calc-sci" class="calc-sci"></div><div id="calc-pad" class="calc-pad"></div></div>
+      <p class="calc-note">Use também o teclado. Parênteses abertos são fechados automaticamente e “2π” ou “3(4+1)” funcionam como multiplicação. % divide por 100.</p>
+    </div>
+    <div class="calc-hist"><h3>Histórico</h3><div id="calc-hist-list"></div>
+      <button id="calc-hist-clear" class="secondary" style="margin-top:10px;width:100%">Limpar histórico</button></div>
+  </div></div>
+</aside>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const KEY='plano-cartesiano-calc';
+let mode='simple',deg=true,second=false,expr='',justEval=false,ans=0,err=null,lastRes='0';const hist=[];
+try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');if(s.mode==='sci')mode='sci';if(s.deg===false)deg=false;}catch(_){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({mode,deg}));}catch(_){}};
+
+// ---------- Avaliador seguro (sem eval) ----------
+function tokenize(s){
+  s=s.replace(/−/g,'-').replace(/×/g,'*').replace(/÷/g,'/').replace(/π/g,' pi ').replace(/√/g,' sqrt ').replace(/∛/g,' cbrt ');
+  const t=[];let i=0;
+  while(i<s.length){const c=s[i];
+    if(/\s/.test(c)){i++;continue;}
+    if(/[0-9.]/.test(c)){let j=i;while(j<s.length&&/[0-9.]/.test(s[j]))j++;const n=s.slice(i,j);
+      if(n==='.'||(n.match(/\./g)||[]).length>1)throw Error('Número inválido');t.push({k:'n',v:parseFloat(n)});i=j;}
+    else if(/[a-z]/i.test(c)){let j=i;while(j<s.length&&/[a-z]/i.test(s[j]))j++;t.push({k:'id',v:s.slice(i,j).toLowerCase()});i=j;}
+    else if('+-*/^!%()'.includes(c)){t.push({k:c});i++;}
+    else throw Error('Caractere inválido');}
+  return t;
+}
+const clean=r=>Math.abs(r)<1e-15?0:r;
+function fact(n){if(n<0||!Number.isInteger(n))throw Error('Fatorial só para inteiros ≥ 0');if(n>170)throw Error('Resultado muito grande');let r=1;for(let i=2;i<=n;i++)r*=i;return r;}
+function evalExpr(str){
+  const rad=x=>deg?x*Math.PI/180:x,back=x=>deg?x*180/Math.PI:x;
+  const FN={sin:x=>clean(Math.sin(rad(x))),cos:x=>clean(Math.cos(rad(x))),
+    tan:x=>{const a=rad(x);if(Math.abs(Math.cos(a))<1e-12)throw Error('tan indefinida');return clean(Math.tan(a));},
+    asin:x=>{if(Math.abs(x)>1)throw Error('Domínio inválido');return back(Math.asin(x));},
+    acos:x=>{if(Math.abs(x)>1)throw Error('Domínio inválido');return back(Math.acos(x));},
+    atan:x=>back(Math.atan(x)),
+    ln:x=>{if(x<=0)throw Error('ln exige valor > 0');return Math.log(x);},
+    log:x=>{if(x<=0)throw Error('log exige valor > 0');return Math.log10(x);},
+    sqrt:x=>{if(x<0)throw Error('Raiz de número negativo');return Math.sqrt(x);},
+    cbrt:Math.cbrt,abs:Math.abs,exp:Math.exp};
+  const T=tokenize(str);let p=0;const pk=()=>T[p],nx=()=>T[p++];
+  const isStart=t=>t&&(t.k==='n'||t.k==='id'||t.k==='(');
+  function ex(){let v=term();while(pk()&&(pk().k==='+'||pk().k==='-')){const o=nx().k,r=term();v=o==='+'?v+r:v-r;}return v;}
+  function term(){let v=un();for(;;){const t=pk();
+    if(t&&(t.k==='*'||t.k==='/')){nx();const r=un();if(t.k==='/'){if(r===0)throw Error('Divisão por zero');v/=r;}else v*=r;}
+    else if(isStart(t))v*=un();else break;}return v;}
+  function un(){const t=pk();if(t&&t.k==='-'){nx();return -un();}if(t&&t.k==='+'){nx();return un();}return pw();}
+  function pw(){const b=po();if(pk()&&pk().k==='^'){nx();return Math.pow(b,un());}return b;}
+  function po(){let v=pr();while(pk()&&(pk().k==='!'||pk().k==='%')){v=nx().k==='!'?fact(v):v/100;}return v;}
+  function pr(){const t=nx();if(!t)throw Error('Expressão incompleta');
+    if(t.k==='n')return t.v;
+    if(t.k==='('){const v=ex();if(pk()&&pk().k===')')nx();return v;}
+    if(t.k==='id'){
+      if(t.v==='pi')return Math.PI;if(t.v==='e')return Math.E;if(t.v==='ans')return ans;
+      if(FN[t.v]){if(!pk()||pk().k!=='(')throw Error('Use parênteses após a função');nx();const a=ex();if(pk()&&pk().k===')')nx();return FN[t.v](a);}
+      throw Error('Nome desconhecido: '+t.v);}
+    throw Error('Expressão inválida');}
+  const v=ex();if(p<T.length)throw Error('Expressão inválida');
+  if(!Number.isFinite(v))throw Error('Resultado indefinido');return v;
+}
+function fmt(x){if(Object.is(x,-0)||x===0)return '0';const a=Math.abs(x);
+  if(a>=1e12||a<1e-9)return x.toExponential(8).replace(/\.?0+e/,'e').replace('e+','e');
+  return String(Number(x.toPrecision(12)));}
+const disp=s=>s.replace(/\./g,',');
+
+// ---------- Entrada ----------
+const INS={sin:'sin(',cos:'cos(',tan:'tan(',asin:'asin(',acos:'acos(',atan:'atan(','π':'π',ln:'ln(',log:'log(','√':'√(','∛':'∛(',e:'e','x²':'^2','x³':'^3','xʸ':'^','n!':'!','1/x':'1/(','|x|':'abs(','10ˣ':'10^(','eˣ':'e^(',Ans:'Ans'};
+const SEC={sin:['sin⁻¹','asin'],cos:['cos⁻¹','acos'],tan:['tan⁻¹','atan'],'√':['∛','∛'],'x²':['x³','x³']};
+const SCI=['2nd','deg','(',')','sin','cos','tan','π','ln','log','√','e','x²','xʸ','n!','1/x','|x|','10ˣ','eˣ','Ans'];
+const PAD=['C','⌫','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','±','0','.','='];
+const OPS='+−×÷';
+function insert(txt){
+  if(justEval){expr=/^[+−×÷^!%]/.test(txt)?'Ans':'';justEval=false;}
+  err=null;
+  if(/[a-zA-Zπ]$/.test(expr)&&/^[a-zA-Zπ√∛]/.test(txt))expr+=' ';
+  const last=expr.slice(-1);
+  if(OPS.includes(last)&&OPS.includes(txt)&&!(txt==='−'&&'×÷'.includes(last)))expr=expr.slice(0,-1);
+  expr+=txt;
+}
+function press(id){
+  if(id==='2nd'){second=!second;}
+  else if(id==='deg'){deg=!deg;save();}
+  else if(id==='C'){expr='';justEval=false;err=null;}
+  else if(id==='⌫'){
+    if(justEval){expr='';justEval=false;}
+    else{const m=expr.match(/(asin\(|acos\(|atan\(|sin\(|cos\(|tan\(|ln\(|log\(|abs\(|[√∛]\(|Ans)$/);expr=expr.slice(0,m?-m[0].length:-1).trimEnd();}
+    err=null;}
+  else if(id==='±'){
+    if(justEval){expr='Ans';justEval=false;}
+    if(!expr)expr='−';else if(expr.startsWith('−(')&&expr.endsWith(')'))expr=expr.slice(2,-1);else expr='−('+expr+')';err=null;}
+  else if(id==='='){
+    if(!expr)return render();
+    try{const v=evalExpr(expr);hist.unshift({expr,v});if(hist.length>30)hist.pop();ans=v;lastRes=fmt(v);justEval=true;err=null;}
+    catch(e){err=e.message;}}
+  else{
+    let key=id;if(second&&SEC[id])key=SEC[id][1];
+    insert(INS[key]??key);}
+  render();
+}
+// ---------- Render ----------
+function render(){
+  $('calc-box').classList.toggle('sci',mode==='sci');
+  $('calc-tab-simple').classList.toggle('active',mode==='simple');$('calc-tab-sci').classList.toggle('active',mode==='sci');
+  $('calc-expr').textContent=disp(expr)+(justEval?' =':'');
+  const res=$('calc-res');res.className='calc-res';
+  if(err){res.textContent=err;res.classList.add('err');}
+  else if(justEval)res.textContent=disp(lastRes);
+  else{let pv='';if(expr&&/[^0-9.]/.test(expr.replace(/^−/,''))){try{pv=fmt(evalExpr(expr));}catch(_){}}
+    res.textContent=pv?disp(pv):(expr?'':'0');if(pv)res.classList.add('prev');}
+  document.querySelectorAll('#calc-sci .calc-k').forEach(b=>{const id=b.dataset.id;
+    b.textContent=id==='deg'?(deg?'DEG':'RAD'):(second&&SEC[id]?SEC[id][0]:id);
+    b.classList.toggle('on',(id==='2nd'&&second));});
+  const h=$('calc-hist-list');
+  h.innerHTML=hist.length?hist.map((x,i)=>`<button class="calc-hist-item" data-i="${i}"><small>${disp(x.expr).replace(/</g,'&lt;')} =</small>${disp(fmt(x.v))}</button>`).join(''):'<div class="calc-note">Nenhum cálculo ainda.</div>';
+}
+function build(){
+  $('calc-sci').innerHTML=SCI.map(id=>`<button class="calc-k fn" data-id="${id}">${id}</button>`).join('');
+  $('calc-pad').innerHTML=PAD.map(id=>`<button class="calc-k ${id==='='?'eq':(OPS.includes(id)||id==='%')?'op':''}" data-id="${id}">${id}</button>`).join('');
+}
+build();
+document.querySelectorAll('#calc-sci .calc-k,#calc-pad .calc-k').forEach(b=>b.addEventListener('click',()=>press(b.dataset.id)));
+$('calc-hist-list').addEventListener('click',e=>{const b=e.target.closest('.calc-hist-item');if(!b)return;
+  expr=fmt(hist[+b.dataset.i].v).replace('-','−');justEval=false;err=null;render();});
+$('calc-hist-clear').addEventListener('click',()=>{hist.length=0;render();});
+const setMode=m=>{mode=m;save();render();};
+$('calc-tab-simple').addEventListener('click',()=>setMode('simple'));
+$('calc-tab-sci').addEventListener('click',()=>setMode('sci'));
+
+// ---------- Abrir / fechar / teclado ----------
+const dr=$('calc-drawer');
+const openC=()=>{dr.classList.add('open');dr.setAttribute('aria-hidden','false');render();dr.focus();};
+const closeC=()=>{dr.classList.remove('open');dr.setAttribute('aria-hidden','true');};
+$('calc-close').addEventListener('click',closeC);
+dr.addEventListener('keydown',e=>{
+  e.stopPropagation(); // evita atalhos do plano (M, D, E...)
+  if(e.key==='Escape'){closeC();return;}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key;let h=true;
+  if(/^[0-9]$/.test(k))press(k);else if(k==='.'||k===',')press('.');
+  else if(k==='+')press('+');else if(k==='-')press('−');else if(k==='*')press('×');else if(k==='/')press('÷');
+  else if(k==='^')press('xʸ');else if(k==='(')press('(');else if(k===')')press(')');
+  else if(k==='!')press('n!');else if(k==='%')press('%');
+  else if(k==='Enter'||k==='=')press('=');else if(k==='Backspace')press('⌫');else if(k==='Delete')press('C');
+  else if(k===' ')h=true;else h=false;
+  if(h)e.preventDefault();
+});
+// Botão no cabeçalho (criado aqui, nenhuma outra edição necessária)
+const btn=document.createElement('button');btn.id='open-calc-btn';btn.className='secondary';btn.textContent='🧮 Calculadora';
+btn.title='Calculadora simples e científica';btn.addEventListener('click',openC);
+const hdr=document.querySelector('.header-actions');hdr.insertBefore(btn,$('open-draw-btn')||null);
+render();
+})();
+</script>
+<style>
 .news-list{display:grid;gap:10px;margin:14px 0}
 .news-item{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:12px 14px;border:1px solid var(--paper-line);border-left:3px solid var(--pencil);border-radius:var(--radius);background:var(--blueprint-deep)}
 .news-icon{font-size:1.3rem;line-height:1.4}
@@ -4775,17 +4971,37 @@ const hdr=document.querySelector('.header-actions'),draw=$('open-draw-btn');hdr.
 
 <div id="news-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="news-title">
   <div class="help-card">
-    <h2 id="news-title">Novidades <span class="news-badge">v1.3.0</span></h2>
+    <h2 id="news-title">Novidades <span class="news-badge">v1.4.0</span></h2>
     <p class="hint">Veja o que foi adicionado nesta versão:</p>
     <div class="news-list">
-      <div class="news-item"><div class="news-icon">▦</div><div><strong>Matrizes e Sistemas Lineares</strong>
-        <span>Nova área, aberta pelo botão “▦ Matrizes” no cabeçalho, para matrizes de ordem até 3×3 e sistemas de até 3 incógnitas.</span></div></div>
-      <div class="news-item"><div class="news-icon">🧮</div><div><strong>Operações com matrizes</strong>
-        <span>Soma, subtração, multiplicação, multiplicação por escalar, transposta, determinante (Laplace ou Sarrus) e inversa (Adjunta ou Gauss-Jordan).</span></div></div>
-      <div class="news-item"><div class="news-icon">🧩</div><div><strong>Sistemas lineares com método à sua escolha</strong>
-        <span>Regra de Cramer, Escalonamento (Gauss), Gauss-Jordan ou Matriz inversa, com classificação em SPD, SPI ou SI.</span></div></div>
-      <div class="news-item"><div class="news-icon">📝</div><div><strong>Passo a passo completo</strong>
-        <span>Cada cálculo mostra as contas e as operações entre linhas, usando frações exatas e sem arredondamentos. Aceita inteiros, decimais e frações como 1/3.</span></div></div>
+      <div class="news-item">
+        <div class="news-icon">📐</div>
+        <div>
+          <strong>Funções Trigonométricas</strong>
+          <span>Seno, cosseno, tangente e suas funções inversas. Alternância rápida e fácil entre cálculos em Graus (DEG) e Radianos (RAD).</span>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-icon">📈</div>
+        <div>
+          <strong>Logaritmos e Exponenciais</strong>
+          <span>Cálculos avançados com logaritmo natural (ln), base 10 (log), potências variadas (x², x³, xⁿ) e suporte a notação científica.</span>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-icon">π</div>
+        <div>
+          <strong>Constantes e Operações Especiais</strong>
+          <span>Acesso direto a constantes matemáticas (π, e), além de suporte para raízes (quadrada, cúbica, enésima) e cálculo de fatorial (n!).</span>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-icon">💾</div>
+        <div>
+          <strong>Memória e Histórico</strong>
+          <span>Novos botões de gerenciamento de memória (MC, MR, M+, M-) e um painel de histórico para revisar e reutilizar resultados anteriores.</span>
+        </div>
+      </div>
     </div>
     <div class="btn-row">
       <button id="news-close" class="secondary">Entendi</button>
@@ -4793,7 +5009,6 @@ const hdr=document.querySelector('.header-actions'),draw=$('open-draw-btn');hdr.
     </div>
   </div>
 </div>
-
 <script>
 (function(){
   const VERSION='1.3.0';
@@ -4834,6 +5049,5 @@ const hdr=document.querySelector('.header-actions'),draw=$('open-draw-btn');hdr.
   if(!seen) setTimeout(open,500);
 })();
 </script>
-<!-- ===== FIM DO MÓDULO ===== -->
 </body>
 </html>
